@@ -1,0 +1,166 @@
+/**
+ * Generate Zod validation schema from PlateFormField definitions.
+ *
+ * This utility creates a Zod schema object from the validation properties
+ * stored in the Plate editor nodes, enabling runtime form validation in preview mode.
+ */
+import { z } from "zod";
+import type { ZodType } from "zod";
+import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
+
+/**
+ * Generates a Zod schema from an array of PlateFormField.
+ *
+ * @param fields - Array of form fields with validation properties
+ * @returns Zod object schema for form validation
+ */
+export const generateZodSchemaFromFields = (
+  fields: PlateFormField[],
+): z.ZodObject<Record<string, ZodType>> => {
+  const schemaShape: Record<string, ZodType> = {};
+
+  for (const field of fields) {
+    // Skip Button fields - they don't have validation
+    if (field.fieldType === "Button") {
+      continue;
+    }
+
+    let fieldSchema: ZodType;
+
+    switch (field.fieldType) {
+      case "Email":
+        fieldSchema = field.required
+          ? z
+              .string({ error: "This field is required" })
+              .min(1, "This field is required")
+              .email("Please enter a valid email address")
+          : z.union([z.literal(""), z.string().email("Please enter a valid email address")]);
+        break;
+      case "Link": {
+        const urlRegex = /^(https?:\/\/)?[\w.-]+\.\w{2,}(\/\S*)?$/;
+        fieldSchema = field.required
+          ? z
+              .string({ error: "This field is required" })
+              .min(1, "This field is required")
+              .regex(urlRegex, "Please enter a valid URL")
+          : z.union([z.literal(""), z.string().regex(urlRegex, "Please enter a valid URL")]);
+        break;
+      }
+      case "Number":
+        fieldSchema = field.required
+          ? z.coerce.number({ error: "Please enter a valid number" })
+          : z.union([z.literal(""), z.coerce.number({ error: "Please enter a valid number" })]);
+        break;
+      case "Date":
+        fieldSchema = field.required
+          ? z.string({ error: "This field is required" }).nonempty("Please select a date")
+          : z.string().optional();
+        break;
+      case "Time":
+        fieldSchema = field.required
+          ? z.string({ error: "This field is required" }).nonempty("Please select a time")
+          : z.string().optional();
+        break;
+      case "FileUpload": {
+        const uploadedFileSchema = z.object({
+          url: z.string(),
+          name: z.string(),
+          size: z.number(),
+          type: z.string(),
+        });
+        fieldSchema = field.required
+          ? uploadedFileSchema.refine((v) => v && v.url.length > 0, {
+              message: "Please upload a file",
+            })
+          : z.union([z.literal(""), uploadedFileSchema]).optional();
+        break;
+      }
+      case "Checkbox":
+      case "MultiSelect":
+        if (field.required) {
+          fieldSchema = z.array(z.string()).nonempty("Please select at least one option");
+        } else {
+          fieldSchema = z.array(z.string()).default([]);
+        }
+        break;
+      case "MultiChoice":
+        if (field.required) {
+          fieldSchema = z.string().min(1, "Please select an option");
+        } else {
+          fieldSchema = z.string().default("");
+        }
+        break;
+      case "Ranking":
+        if (field.required) {
+          fieldSchema = z.array(z.string()).nonempty("Please rank the options");
+        } else {
+          fieldSchema = z.array(z.string()).default([]);
+        }
+        break;
+      default: {
+        // Input, Textarea, Phone, and other string-based types
+        let schema: z.ZodString = z.string();
+
+        // Apply minLength constraint
+        if ("minLength" in field && field.minLength !== undefined && field.minLength > 0) {
+          schema = schema.min(field.minLength, `Minimum ${field.minLength} characters required`);
+        }
+
+        // Apply maxLength constraint
+        if ("maxLength" in field && field.maxLength !== undefined && field.maxLength > 0) {
+          schema = schema.max(field.maxLength, `Maximum ${field.maxLength} characters allowed`);
+        }
+
+        // Required fields must have at least 1 character
+        if (field.required && !("minLength" in field && field.minLength !== undefined)) {
+          schema = schema.min(1, "This field is required");
+        }
+
+        fieldSchema = schema;
+        break;
+      }
+    }
+
+    // Handle required vs optional
+    if (field.required) {
+      schemaShape[field.name] = fieldSchema;
+    } else {
+      schemaShape[field.name] = fieldSchema.optional();
+    }
+  }
+
+  return z.object(schemaShape);
+};
+
+/**
+ * Generates default form values from fields, using defaultValue if specified.
+ *
+ * @param fields - Array of form fields
+ * @returns Object with field names as keys and default values
+ */
+export const generateDefaultValuesFromFields = (
+  fields: PlateFormField[],
+): Record<string, unknown> => {
+  const defaults: Record<string, unknown> = {};
+
+  for (const field of fields) {
+    // Skip Button fields - they don't have form values
+    if (field.fieldType === "Button") {
+      continue;
+    }
+    if (
+      field.fieldType === "Checkbox" ||
+      field.fieldType === "MultiSelect" ||
+      field.fieldType === "Ranking"
+    ) {
+      defaults[field.name] = [];
+    } else if (field.fieldType === "MultiChoice") {
+      defaults[field.name] = "";
+    } else {
+      defaults[field.name] =
+        "defaultValue" in field && field.defaultValue ? field.defaultValue : "";
+    }
+  }
+
+  return defaults;
+};

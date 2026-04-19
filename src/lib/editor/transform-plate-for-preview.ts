@@ -1,0 +1,327 @@
+import type { Value } from "platejs";
+import {
+  ALLOWED_LABEL_TYPES,
+  INPUT_TYPE_TO_FIELD_TYPE,
+  VARIANT_TO_FIELD_TYPE,
+  resolveRequired,
+} from "@/lib/form-schema/form-field-constants";
+import { extractTextContent, slugify } from "./transform-plate-to-form";
+import type { PlateFormField } from "./transform-plate-to-form";
+
+// --- Segment types ---
+
+export type StaticSegment = { type: "static"; nodes: Value };
+export type FieldSegment = { type: "field"; field: PlateFormField };
+export type PreviewSegment = StaticSegment | FieldSegment;
+
+export type PreviewStepResult = {
+  /** Array of steps, each containing segments for that step */
+  steps: PreviewSegment[][];
+  /** Raw Plate nodes for thank-you page (rendered entirely via PlateStatic) */
+  thankYouNodes: Value | null;
+};
+
+// --- Core transform ---
+
+/**
+ * Transforms Plate editor Value into chunked preview segments.
+ *
+ * Static content (headings, paragraphs, blockquotes, code blocks, etc.)
+ * is grouped into StaticSegments rendered by PlateStatic.
+ * Form fields (Input, Textarea, Button) become FieldSegments
+ * rendered by custom form components.
+ *
+ * Handles multi-step splitting on pageBreak nodes and
+ * thank-you page extraction (isThankYouPage pageBreak).
+ */
+export const transformPlateForPreview = (value: Value): PreviewStepResult => {
+  // Skip formHeader node (handled separately by extractFormHeader)
+  let startIdx = 0;
+  if (value.length > 0 && value[0].type === "formHeader") {
+    startIdx = 1;
+  }
+
+  const remaining = value.slice(startIdx);
+
+  // Split remaining nodes on pageBreak into raw step arrays
+  const rawSteps: Value[] = [];
+  let thankYouNodes: Value | null = null;
+  let currentChunk: Value = [];
+  let collectingThankYou = false;
+
+  for (const node of remaining) {
+    if (node.type === "pageBreak") {
+      // Flush current chunk as a step
+      if (currentChunk.length > 0 && !collectingThankYou) {
+        rawSteps.push(currentChunk);
+        currentChunk = [];
+      }
+
+      if (node.isThankYouPage) {
+        collectingThankYou = true;
+      }
+      continue;
+    }
+
+    if (collectingThankYou) {
+      if (!thankYouNodes) thankYouNodes = [];
+      thankYouNodes.push(node);
+    } else {
+      currentChunk.push(node);
+    }
+  }
+
+  // Don't forget the last chunk
+  if (currentChunk.length > 0 && !collectingThankYou) {
+    rawSteps.push(currentChunk);
+  }
+
+  // If no steps were created but we have content, it's a single step
+  if (rawSteps.length === 0 && currentChunk.length > 0) {
+    rawSteps.push(currentChunk);
+  }
+
+  // Convert each raw step into segments
+  const steps = rawSteps.map((stepNodes) => createSegments(stepNodes));
+
+  return { steps, thankYouNodes };
+};
+
+/**
+ * Walks an array of Plate nodes and produces an ordered list of segments.
+ * Consecutive static nodes are grouped into a single StaticSegment.
+ * Form nodes (formLabel+formInput, formButton) become FieldSegments.
+ */
+const createSegments = (nodes: Value): PreviewSegment[] => {
+  const segments: PreviewSegment[] = [];
+  let staticBuffer: Value = [];
+  let fieldIndex = 0;
+
+  /** Indices of label nodes that have been claimed by an input — skip in default branch */
+  const consumedIndices = new Set<number>();
+
+  const flushStatic = () => {
+    if (staticBuffer.length > 0) {
+      segments.push({ type: "static", nodes: staticBuffer });
+      staticBuffer = [];
+    }
+  };
+
+  /**
+   * Look back at nodes[i-1] to find a label.
+   * If the previous node is in ALLOWED_LABEL_TYPES, extract its text and
+   * mark it as consumed (removing it from the static buffer if present).
+   * Returns { labelText, labelNode } or null.
+   */
+  const lookBackForLabel = (
+    i: number,
+  ): { labelText: string; labelNode: Record<string, unknown> } | null => {
+    if (i <= 0) return null;
+    const prev = nodes[i - 1];
+    const prevType = prev.type as string;
+    if (!ALLOWED_LABEL_TYPES.has(prevType)) return null;
+
+    const labelText = extractTextContent(prev.children as Array<{ text?: string }>);
+    consumedIndices.add(i - 1);
+
+    // Pop the label from the static buffer if it was the most-recently pushed item
+    if (staticBuffer.length > 0 && staticBuffer[staticBuffer.length - 1] === prev) {
+      staticBuffer.pop();
+    }
+
+    return { labelText, labelNode: prev as Record<string, unknown> };
+  };
+
+  let i = 0;
+  while (i < nodes.length) {
+    const node = nodes[i];
+    const nodeType = node.type as string;
+
+    // --- Simple input types (formInput, formTextarea, formEmail, etc.) ---
+    if (INPUT_TYPE_TO_FIELD_TYPE[nodeType]) {
+      const label = lookBackForLabel(i);
+      flushStatic();
+      const labelText = label?.labelText ?? "";
+      const labelNode = label?.labelNode ?? null;
+      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+
+      const inputText = extractTextContent(node.children as Array<{ text?: string }>);
+      const placeholder = inputText || (node.placeholder as string) || "";
+      const minLength = node.minLength as number | undefined;
+      const maxLength = node.maxLength as number | undefined;
+      const defaultValue = node.defaultValue as string | undefined;
+
+      const stableId =
+        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const baseName = slugify(labelText);
+      const name = stableId || `${baseName}_${fieldIndex}`;
+
+      segments.push({
+        type: "field",
+        field: {
+          id: name,
+          name,
+          fieldType: INPUT_TYPE_TO_FIELD_TYPE[nodeType] as PlateFormField["fieldType"],
+          label: labelText || "Untitled Field",
+          labelType: label?.labelNode.type as string | undefined,
+          placeholder: placeholder || undefined,
+          required: isRequired,
+          minLength,
+          maxLength,
+          defaultValue,
+        } as PlateFormField,
+      });
+      fieldIndex++;
+      i++;
+      continue;
+    }
+
+    // --- formMultiSelectInput (badge-based multi-select) ---
+    if (nodeType === "formMultiSelectInput") {
+      const label = lookBackForLabel(i);
+      flushStatic();
+      const labelText = label?.labelText ?? "";
+      const labelNode = label?.labelNode ?? null;
+      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+
+      const rawOptions = (node.options as string[]) ?? [];
+      const options = rawOptions.map((opt, idx) => ({
+        value: slugify(opt) || `option_${idx + 1}`,
+        label: opt || `Option ${idx + 1}`,
+      }));
+
+      const stableId =
+        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const baseName = slugify(labelText);
+      const name = stableId || `${baseName}_${fieldIndex}`;
+
+      segments.push({
+        type: "field",
+        field: {
+          id: name,
+          name,
+          fieldType: "MultiSelect",
+          label: labelText || "Untitled Field",
+          labelType: label?.labelNode.type as string | undefined,
+          required: isRequired,
+          options,
+        } as PlateFormField,
+      });
+      fieldIndex++;
+      i++;
+      continue;
+    }
+
+    // --- formOptionItem (compound field — collect consecutive option items) ---
+    if (nodeType === "formOptionItem") {
+      const label = lookBackForLabel(i);
+      flushStatic();
+      const labelText = label?.labelText ?? "";
+      const labelNode = label?.labelNode ?? null;
+      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+
+      const variant = (node.variant as string) || "checkbox";
+
+      const options: { value: string; label: string }[] = [];
+      let j = i;
+      while (j < nodes.length && (nodes[j].type as string) === "formOptionItem") {
+        const optText = extractTextContent(nodes[j].children as Array<{ text?: string }>);
+        const optLabel = optText || `Option ${options.length + 1}`;
+        options.push({
+          value: slugify(optLabel) || `option_${options.length + 1}`,
+          label: optLabel,
+        });
+        j++;
+      }
+
+      const stableId =
+        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const baseName = slugify(labelText);
+      const name = stableId || `${baseName}_${fieldIndex}`;
+
+      segments.push({
+        type: "field",
+        field: {
+          id: name,
+          name,
+          fieldType: VARIANT_TO_FIELD_TYPE[variant] || "Checkbox",
+          label: labelText || "Untitled Field",
+          labelType: label?.labelNode.type as string | undefined,
+          required: isRequired,
+          options,
+        } as PlateFormField,
+      });
+      fieldIndex++;
+      i = j; // Advance past all consumed option nodes
+      continue;
+    }
+
+    // --- formButton — unchanged ---
+    if (nodeType === "formButton") {
+      flushStatic();
+
+      const childText = extractTextContent(node.children as Array<{ text?: string }>);
+      const btnText =
+        (node.label as string | undefined) || childText || (node.buttonText as string | undefined);
+      const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
+      const defaultText =
+        btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
+      const name = `button_${fieldIndex}`;
+
+      segments.push({
+        type: "field",
+        field: {
+          id: name,
+          name,
+          fieldType: "Button",
+          buttonText: btnText || defaultText,
+          buttonRole: btnRole,
+        },
+      });
+      fieldIndex++;
+      i++;
+      continue;
+    }
+
+    // --- Default: static content (skip if already consumed as a label) ---
+    if (!consumedIndices.has(i)) {
+      staticBuffer.push(node);
+    }
+    i++;
+  }
+
+  flushStatic();
+  return segments;
+};
+
+// --- Utility functions ---
+
+/**
+ * Extracts PlateFormField items from a segment array.
+ * Used by StepForm to set up form validation.
+ */
+export const getFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
+  segments.filter((seg): seg is FieldSegment => seg.type === "field").map((seg) => seg.field);
+
+/**
+ * Extracts only editable (non-button) fields from segments.
+ * Used for form field count checks and auto-jump logic.
+ */
+export const EDITABLE_FIELD_TYPES = new Set([
+  "Input",
+  "Textarea",
+  "Email",
+  "Phone",
+  "Number",
+  "Link",
+  "Date",
+  "Time",
+  "FileUpload",
+  "Checkbox",
+  "MultiChoice",
+  "MultiSelect",
+  "Ranking",
+]);
+
+export const getEditableFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
+  getFieldsFromSegments(segments).filter((f) => EDITABLE_FIELD_TYPES.has(f.fieldType));

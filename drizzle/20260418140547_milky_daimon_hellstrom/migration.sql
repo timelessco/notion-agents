@@ -1,0 +1,1 @@
+ALTER TABLE "forms" ADD COLUMN "kind" text DEFAULT 'form' NOT NULL;

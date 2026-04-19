@@ -1,0 +1,621 @@
+/** @jsx jsxt */
+
+import { jsxt } from "@platejs/test-utils";
+import { createEditor, createSlateEditor } from "platejs";
+
+import { type BaseLinkConfig, BaseLinkPlugin } from "../BaseLinkPlugin";
+import { upsertLink } from "./upsertLink";
+
+jsxt;
+
+const url = "http://google.com";
+const urlOutput = "http://output.com";
+
+const createTestEditor = (editor: any, options?: BaseLinkConfig["options"]) =>
+  createSlateEditor({
+    editor,
+    plugins: [BaseLinkPlugin.configure({ options })],
+  });
+
+describe("upsertLink", () => {
+  describe("when selection is collapsed", () => {
+    describe("when custom isUrl rejects an internal path", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              insert link
+              <cursor />.
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            insert link
+            <cursor />.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("does not insert the link", () => {
+        const editor = createTestEditor(input, {
+          isUrl: (inputUrl: string) => !inputUrl.startsWith("/"),
+        });
+
+        expect(upsertLink(editor, { url: "/internal/path" })).toBeUndefined();
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    // https://github.com/udecode/editor-protocol/issues/46
+    describe("when not in link, url only", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              insert link
+              <cursor />.
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            insert link<ha url={url}>{url}</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("insert link", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    // https://github.com/udecode/editor-protocol/issues/47
+    describe("when not in link, url+text", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              insert link
+              <cursor />.
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            insert link<ha url={url}>another</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("insert link with text", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { text: "another", url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    // https://github.com/udecode/editor-protocol/issues/35
+    describe("when in a link, insert url", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              .
+              <ha url={url}>
+                insert <cursor /> link
+              </ha>
+              .
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            .<ha url={url}>insert {url} link</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("insert text", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { insertTextInLink: true, url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    describe("when in a link, edit same url, same text", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              .
+              <ha url={url}>
+                insert <cursor />
+                link
+              </ha>
+              .
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            .<ha url={url}>insert link</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("keeps the existing link unchanged", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { text: "insert link", url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    // https://github.com/udecode/editor-protocol/issues/59
+    describe("when in a link, edit url", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              .
+              <ha url={url}>
+                insert <cursor />
+                link
+              </ha>
+              .
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            .<ha url={urlOutput}>insert link</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("update link url", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { url: urlOutput });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    // https://github.com/udecode/editor-protocol/issues/58
+    describe("when in a link, edit text + same url", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              .
+              <ha url={url}>
+                <htext bold>
+                  insert <cursor /> link
+                </htext>
+              </ha>
+              .
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            .
+            <ha url={url}>
+              <htext bold>edit link</htext>
+            </ha>
+            .
+          </hp>
+        </editor>
+      ) as any;
+
+      it("insert text", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { text: "edit link", url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    describe("when in a link, insertTextInLink + same url", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              .
+              <ha url={url}>
+                insert <cursor /> link
+              </ha>
+              .
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            .<ha url={url}>insert {url} link</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("insert text", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { insertTextInLink: true, url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    // https://github.com/udecode/editor-protocol/issues/60
+    describe("when in a link, set empty text", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              .
+              <ha url={url}>
+                insert <cursor /> link
+              </ha>
+              .
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            .<ha url={url}>{url}</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("set text to url", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { text: "", url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+  });
+
+  describe("when selection is expanded", () => {
+    // https://github.com/udecode/editor-protocol/issues/50
+    describe("when not in link, insert url + same text", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              .<anchor />
+              insert link
+              <focus />.
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            .<ha url={url}>insert link</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("insert link", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { text: "insert link", url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    // https://github.com/udecode/editor-protocol/issues/50
+    describe("when not in link, insert url+text", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              .<anchor />
+              insert <htext>bold</htext> link
+              <focus />.
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            .<ha url={url}>another</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("insert link", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { text: "another", url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    // done
+    describe("when in a link", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              .
+              <ha url={url}>
+                insert <anchor />
+                link
+                <focus />
+              </ha>
+              .
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            .<ha url={url}>insert link</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("insert text", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    // done
+    describe("when containing a link", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              insert link <anchor />
+              <ha url={url}>here</ha>
+              <focus />.
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            insert link <ha url={urlOutput}>here</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("delete and insert link", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { url: urlOutput });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    describe("when containing a link and replacing its text", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              insert link <anchor />
+              <ha url={url}>here</ha>
+              <focus />.
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            insert link <ha url={url}>renamed</ha>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("replaces the wrapped text instead of keeping the original link text", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { text: "renamed", url });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+
+    // https://github.com/udecode/editor-protocol/issues/70
+    describe("when inserting a link in a marked text", () => {
+      const input = createEditor(
+        (
+          <editor>
+            <hp>
+              insert{" "}
+              <htext bold>
+                link <cursor /> here
+              </htext>
+              .
+            </hp>
+          </editor>
+        ) as any,
+      );
+
+      const output = (
+        <editor>
+          <hp>
+            insert <htext bold>link </htext>
+            <ha url={urlOutput}>
+              <htext bold>{urlOutput}</htext>
+            </ha>
+            <htext bold> here</htext>.
+          </hp>
+        </editor>
+      ) as any;
+
+      it("preserves marks on the new link", () => {
+        const editor = createTestEditor(input);
+        upsertLink(editor, { url: urlOutput });
+
+        expect(editor.children).toEqual(output.children);
+      });
+    });
+  });
+
+  describe("when skipValidation is false and url is invalid", () => {
+    const input = createEditor(
+      (
+        <editor>
+          <hp>
+            insert link
+            <cursor />.
+          </hp>
+        </editor>
+      ) as any,
+    );
+
+    const output = (
+      <editor>
+        <hp>insert link.</hp>
+      </editor>
+    ) as any;
+
+    it("keeps content unchanged for invalid URLs", () => {
+      const editor = createTestEditor(input);
+      upsertLink(editor, {
+        skipValidation: false,
+        url: "invalid",
+      });
+
+      expect(editor.children).toEqual(output.children);
+    });
+  });
+
+  describe("when skipValidation is true and url is invalid", () => {
+    const input = createEditor(
+      (
+        <editor>
+          <hp>
+            insert link
+            <cursor />.
+          </hp>
+        </editor>
+      ) as any,
+    );
+
+    const output = (
+      <editor>
+        <hp>
+          insert link<ha url="invalid">invalid</ha>.
+        </hp>
+      </editor>
+    ) as any;
+
+    it("insert", () => {
+      const editor = createTestEditor(input);
+      upsertLink(editor, {
+        skipValidation: true,
+        url: "invalid",
+      });
+
+      expect(editor.children).toEqual(output.children);
+    });
+  });
+
+  describe("when selection is missing", () => {
+    it("returns undefined and keeps content unchanged", () => {
+      const editor = createTestEditor(
+        createEditor(
+          (
+            <editor>
+              <hp>plain text</hp>
+            </editor>
+          ) as any,
+        ),
+      );
+
+      editor.selection = null;
+
+      expect(upsertLink(editor, { url })).toBeUndefined();
+      expect(editor.children).toEqual([
+        {
+          children: [{ text: "plain text" }],
+          type: "p",
+        },
+      ]);
+    });
+  });
+
+  describe("when in a link and updating target only", () => {
+    const input = createEditor(
+      (
+        <editor>
+          <hp>
+            .
+            <ha url={url}>
+              insert <cursor />
+              link
+            </ha>
+            .
+          </hp>
+        </editor>
+      ) as any,
+    );
+
+    const output = (
+      <editor>
+        <hp>
+          .
+          <ha target="_blank" url={url}>
+            insert link
+          </ha>
+          .
+        </hp>
+      </editor>
+    ) as any;
+
+    it("updates target without replacing the existing text", () => {
+      const editor = createTestEditor(input);
+
+      upsertLink(editor, { target: "_blank", url });
+
+      expect(editor.children).toEqual(output.children);
+    });
+  });
+});

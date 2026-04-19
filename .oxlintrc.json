@@ -1,0 +1,99 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "react-hooks", "typescript", "jsx-a11y", "import", "unicorn", "promise"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "off",
+    "style": "off",
+    "restriction": "off"
+  },
+  "rules": {
+    "no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "no-console": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-uses-react": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/prefer-ts-expect-error": "warn",
+    "import/no-duplicates": "error",
+    "import/no-self-import": "error",
+    "import/no-cycle": "warn",
+    "unicorn/no-null": "off",
+    "unicorn/prevent-abbreviations": "off",
+    "unicorn/filename-case": "off",
+    "unicorn/no-array-for-each": "off",
+    "unicorn/no-useless-undefined": "off",
+    "promise/no-nesting": "warn",
+    "promise/no-return-wrap": "error",
+    "jsx-a11y/no-autofocus": "off",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "jsx-a11y/no-static-element-interactions": "warn",
+    "jsx-a11y/anchor-is-valid": "off",
+    "react-perf/jsx-no-new-function-as-prop": "off"
+  },
+  "settings": {
+    "jsx-a11y": {
+      "polymorphicPropName": "as",
+      "components": {
+        "Button": "button",
+        "Link": "a",
+        "Input": "input"
+      }
+    },
+    "react": {
+      "formComponents": [],
+      "linkComponents": [
+        {
+          "name": "Link",
+          "linkAttribute": "to"
+        }
+      ],
+      "version": "19.0"
+    }
+  },
+  "env": {
+    "builtin": true,
+    "browser": true,
+    "node": true,
+    "es2024": true
+  },
+  "globals": {},
+  "ignorePatterns": [
+    "**/routeTree.gen.ts",
+    "**/styles.css",
+    "**/node_modules/**",
+    "**/.output/**",
+    "**/dist/**",
+    "**/public/**"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+      "plugins": ["vitest"],
+      "env": {
+        "vitest": true
+      },
+      "rules": {
+        "vitest/no-disabled-tests": "warn",
+        "vitest/no-focused-tests": "error",
+        "vitest/expect-expect": "warn",
+        "jest/no-hooks": "off"
+      }
+    }
+  ],
+  "extends": [
+    "./node_modules/ultracite/config/oxlint/core/.oxlintrc.json",
+    "./node_modules/ultracite/config/oxlint/remix/.oxlintrc.json",
+    "./node_modules/ultracite/config/oxlint/react/.oxlintrc.json"
+  ]
+}

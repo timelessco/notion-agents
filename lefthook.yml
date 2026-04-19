@@ -1,0 +1,27 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: ultracite
+      run: bun x ultracite fix
+      glob:
+        - "**/*.js"
+        - "**/*.jsx"
+        - "**/*.ts"
+        - "**/*.tsx"
+        - "**/*.json"
+        - "**/*.jsonc"
+        - "**/*.css"
+      stage_fixed: true
+    - name: knip
+      run: bun x knip --strict --use-tsconfig-files
+      glob:
+        - "**/*.ts"
+        - "**/*.tsx"
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: typecheck
+      run: bun x tsc --noEmit
+    - name: test
+      run: bun run test
