@@ -10,9 +10,9 @@ import { Toaster } from "@/components/ui/sonner";
 import type { Session } from "@/lib/auth/auth";
 import appCss from "../styles/styles.css?url";
 
-const LazyDevtools = lazy(() =>
-  import("./-components/devtools").then((m) => ({ default: m.Devtools })),
-);
+const LazyDevtools = import.meta.env.DEV
+  ? lazy(() => import("./-components/devtools").then((m) => ({ default: m.Devtools })))
+  : null;
 
 interface MyRouterContext {
   queryClient: QueryClient;
@@ -37,7 +37,7 @@ const RootDocument = ({ children }: { children: React.ReactNode }) => (
         <ThemeProvider defaultTheme="system">
           {children}
           <Toaster richColors />
-          {process.env.NODE_ENV === "development" && (
+          {LazyDevtools && (
             <Suspense>
               <LazyDevtools />
             </Suspense>

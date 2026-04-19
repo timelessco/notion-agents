@@ -1,120 +1,117 @@
 import { defineRelations } from "drizzle-orm";
-import {
-  boolean,
-  index,
-  integer,
-  jsonb,
-  pgTable,
-  serial,
-  text,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createSelectSchema } from "drizzle-zod";
+
+// D1 (SQLite) schema. Conventions:
+// - Booleans stored as integers (0/1) via `integer({ mode: "boolean" })`.
+// - Timestamps stored as ms-epoch integers via `integer({ mode: "timestamp_ms" })`.
+//   Defaults use `.$defaultFn(() => new Date())` — runs client-side in drizzle,
+//   so we don't depend on a SQLite-side `now()` function.
+// - JSON columns stored as TEXT via `text({ mode: "json" })`; defaults serialize
+//   at DDL time.
 
 // ============================================================================
 // Organization Tables (Better Auth Organization Plugin)
 // ============================================================================
 
-export const organization = pgTable("organization", {
+export const organization = sqliteTable("organization", {
   id: text().primaryKey(),
   name: text().notNull(),
   slug: text().unique(),
   logo: text(),
   metadata: text(),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
 });
 
-export const member = pgTable(
+export const member = sqliteTable(
   "member",
   {
     id: text().primaryKey(),
     userId: text().notNull(),
     organizationId: text().notNull(),
     role: text().notNull().default("member"),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [index("idx_member_user_id_org_id").on(t.userId, t.organizationId)],
 );
 
-export const invitation = pgTable("invitation", {
+export const invitation = sqliteTable("invitation", {
   id: text().primaryKey(),
   email: text().notNull(),
   inviterId: text().notNull(),
   organizationId: text().notNull(),
   role: text().notNull().default("member"),
-  status: text().notNull().default("pending"), // pending, accepted, rejected, canceled
-  expiresAt: timestamp({ withTimezone: true }).notNull(),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  status: text().notNull().default("pending"),
+  expiresAt: integer({ mode: "timestamp_ms" }).notNull(),
+  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
 });
 
-export const todos = pgTable("todos", {
-  id: serial().primaryKey(),
+export const todos = sqliteTable("todos", {
+  id: integer().primaryKey({ autoIncrement: true }),
   title: text().notNull(),
-  createdAt: timestamp({ withTimezone: true }).defaultNow(),
+  createdAt: integer({ mode: "timestamp_ms" }).$defaultFn(() => new Date()),
 });
 
 // Better Auth Tables
 
-export const user = pgTable("user", {
+export const user = sqliteTable("user", {
   id: text().primaryKey(),
   name: text().notNull(),
   email: text().notNull().unique(),
-  emailVerified: boolean().notNull().default(false),
+  emailVerified: integer({ mode: "boolean" }).notNull().default(false),
   image: text(),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  // Username plugin fields
+  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   username: text().unique(),
   displayUsername: text(),
-  // Two-factor plugin fields
-  twoFactorEnabled: boolean().default(false),
+  twoFactorEnabled: integer({ mode: "boolean" }).default(false),
 });
 
-export const session = pgTable("session", {
+export const session = sqliteTable("session", {
   id: text().primaryKey(),
   userId: text().notNull(),
   token: text().notNull().unique(),
-  expiresAt: timestamp({ withTimezone: true }).notNull(),
+  expiresAt: integer({ mode: "timestamp_ms" }).notNull(),
   ipAddress: text(),
   userAgent: text(),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   activeOrganizationId: text(),
 });
 
-export const account = pgTable("account", {
+export const account = sqliteTable("account", {
   id: text().primaryKey(),
   userId: text().notNull(),
   accountId: text().notNull(),
   providerId: text().notNull(),
   accessToken: text(),
   refreshToken: text(),
-  accessTokenExpiresAt: timestamp({ withTimezone: true }),
-  refreshTokenExpiresAt: timestamp({ withTimezone: true }),
+  accessTokenExpiresAt: integer({ mode: "timestamp_ms" }),
+  refreshTokenExpiresAt: integer({ mode: "timestamp_ms" }),
   scope: text(),
   idToken: text(),
   password: text(),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
 });
 
-export const verification = pgTable("verification", {
+export const verification = sqliteTable("verification", {
   id: text().primaryKey(),
   identifier: text().notNull(),
   value: text().notNull(),
-  expiresAt: timestamp({ withTimezone: true }).notNull(),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  expiresAt: integer({ mode: "timestamp_ms" }).notNull(),
+  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
 });
 
-export const twoFactor = pgTable("twoFactor", {
+export const twoFactor = sqliteTable("twoFactor", {
   id: text().primaryKey(),
   secret: text().notNull(),
   backupCodes: text().notNull(),
   userId: text().notNull(),
 });
 
-export const apikey = pgTable("apikey", {
+export const apikey = sqliteTable("apikey", {
   id: text().primaryKey(),
   name: text(),
   start: text(),
@@ -124,31 +121,30 @@ export const apikey = pgTable("apikey", {
   referenceId: text(),
   refillInterval: integer(),
   refillAmount: integer(),
-  lastRefillAt: timestamp({ withTimezone: true }),
-  enabled: boolean().default(true),
-  rateLimitEnabled: boolean().default(true),
+  lastRefillAt: integer({ mode: "timestamp_ms" }),
+  enabled: integer({ mode: "boolean" }).default(true),
+  rateLimitEnabled: integer({ mode: "boolean" }).default(true),
   rateLimitTimeWindow: integer().default(86400000),
   rateLimitMax: integer().default(10),
   requestCount: integer().default(0),
   remaining: integer(),
-  lastRequest: timestamp({ withTimezone: true }),
-  expiresAt: timestamp({ withTimezone: true }),
-  createdAt: timestamp({ withTimezone: true }).notNull(),
-  updatedAt: timestamp({ withTimezone: true }).notNull(),
+  lastRequest: integer({ mode: "timestamp_ms" }),
+  expiresAt: integer({ mode: "timestamp_ms" }),
+  createdAt: integer({ mode: "timestamp_ms" }).notNull(),
+  updatedAt: integer({ mode: "timestamp_ms" }).notNull(),
   permissions: text(),
   metadata: text(),
 });
 
-// Workspaces table for organizing forms
-export const workspaces = pgTable(
+export const workspaces = sqliteTable(
   "workspaces",
   {
     id: text().primaryKey(),
     organizationId: text().notNull(),
     createdByUserId: text().notNull(),
     name: text().notNull().default("Collection"),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_workspaces_organization_id").on(t.organizationId),
@@ -156,55 +152,52 @@ export const workspaces = pgTable(
   ],
 );
 
-// Forms table for storing form builder documents
-export const forms = pgTable(
+export const forms = sqliteTable(
   "forms",
   {
-    id: text().primaryKey(), // UUID generated client-side
+    id: text().primaryKey(),
     createdByUserId: text().notNull(),
     workspaceId: text().notNull(),
     title: text().notNull().default("Untitled"),
     formName: text().notNull().default("draft"),
     schemaName: text().notNull().default("draftFormSchema"),
-    content: jsonb().notNull().default([]),
-    settings: jsonb().notNull().default({}),
+    content: text({ mode: "json" }).notNull().default([]),
+    settings: text({ mode: "json" }).notNull().default({}),
     icon: text(),
     cover: text(),
-    isMultiStep: boolean().notNull().default(false),
-    kind: text().notNull().default("form"), // 'form' | 'database'
-    status: text().notNull().default("draft"), // 'draft' | 'published' | 'archived'
-    deletedAt: timestamp({ withTimezone: true }), // Soft delete timestamp for trash feature
-    // Version history fields
-    lastPublishedVersionId: text(), // FK to formVersions.id
-    publishedContentHash: text(), // Hash for fast change detection
-    // --- Public form settings (merged from form_settings) ---
+    isMultiStep: integer({ mode: "boolean" }).notNull().default(false),
+    kind: text().$type<"form" | "database">().notNull().default("form"),
+    status: text().$type<"draft" | "published" | "archived">().notNull().default("draft"),
+    deletedAt: integer({ mode: "timestamp_ms" }),
+    lastPublishedVersionId: text(),
+    publishedContentHash: text(),
     language: text().default("English").notNull(),
-    redirectOnCompletion: boolean().default(false).notNull(),
+    redirectOnCompletion: integer({ mode: "boolean" }).default(false).notNull(),
     redirectUrl: text(),
     redirectDelay: integer().default(0).notNull(),
-    progressBar: boolean().default(false).notNull(),
-    branding: boolean().default(true).notNull(),
-    autoJump: boolean().default(false).notNull(),
-    saveAnswersForLater: boolean().default(true).notNull(),
-    selfEmailNotifications: boolean().default(false).notNull(),
+    progressBar: integer({ mode: "boolean" }).default(false).notNull(),
+    branding: integer({ mode: "boolean" }).default(true).notNull(),
+    autoJump: integer({ mode: "boolean" }).default(false).notNull(),
+    saveAnswersForLater: integer({ mode: "boolean" }).default(true).notNull(),
+    selfEmailNotifications: integer({ mode: "boolean" }).default(false).notNull(),
     notificationEmail: text(),
-    respondentEmailNotifications: boolean().default(false).notNull(),
+    respondentEmailNotifications: integer({ mode: "boolean" }).default(false).notNull(),
     respondentEmailSubject: text(),
     respondentEmailBody: text(),
-    passwordProtect: boolean().default(false).notNull(),
+    passwordProtect: integer({ mode: "boolean" }).default(false).notNull(),
     password: text(),
-    closeForm: boolean().default(false).notNull(),
+    closeForm: integer({ mode: "boolean" }).default(false).notNull(),
     closedFormMessage: text().default("This form is now closed."),
-    closeOnDate: boolean().default(false).notNull(),
+    closeOnDate: integer({ mode: "boolean" }).default(false).notNull(),
     closeDate: text(),
-    limitSubmissions: boolean().default(false).notNull(),
+    limitSubmissions: integer({ mode: "boolean" }).default(false).notNull(),
     maxSubmissions: integer(),
-    preventDuplicateSubmissions: boolean().default(false).notNull(),
-    dataRetention: boolean().default(false).notNull(),
+    preventDuplicateSubmissions: integer({ mode: "boolean" }).default(false).notNull(),
+    dataRetention: integer({ mode: "boolean" }).default(false).notNull(),
     dataRetentionDays: integer(),
-    customization: jsonb().default({}),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    customization: text({ mode: "json" }).default({}),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_forms_workspace_id").on(t.workspaceId),
@@ -213,20 +206,19 @@ export const forms = pgTable(
   ],
 );
 
-// Form Versions table for storing published snapshots
-export const formVersions = pgTable(
+export const formVersions = sqliteTable(
   "form_versions",
   {
     id: text().primaryKey(),
     formId: text().notNull(),
-    version: integer().notNull(), // v1, v2, v3...
-    content: jsonb().notNull(), // Plate.js JSON snapshot
-    settings: jsonb().notNull(), // Settings snapshot
-    customization: jsonb().default({}), // Theme customization snapshot
+    version: integer().notNull(),
+    content: text({ mode: "json" }).notNull(),
+    settings: text({ mode: "json" }).notNull(),
+    customization: text({ mode: "json" }).default({}),
     title: text().notNull(),
     publishedByUserId: text().notNull(),
-    publishedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    publishedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_form_versions_form_id").on(t.formId),
@@ -234,17 +226,16 @@ export const formVersions = pgTable(
   ],
 );
 
-// Submissions table for storing form responses
-export const submissions = pgTable(
+export const submissions = sqliteTable(
   "submissions",
   {
     id: text().primaryKey(),
     formId: text().notNull(),
-    formVersionId: text(), // Links to the form version this submission was created against
-    data: jsonb().notNull().default({}),
-    isCompleted: boolean().notNull().default(true),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    formVersionId: text(),
+    data: text({ mode: "json" }).notNull().default({}),
+    isCompleted: integer({ mode: "boolean" }).notNull().default(true),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_submissions_form_id").on(t.formId),
@@ -252,16 +243,15 @@ export const submissions = pgTable(
   ],
 );
 
-// Form Favorites table for per-user favorites
-export const formFavorites = pgTable(
+export const formFavorites = sqliteTable(
   "form_favorites",
   {
-    id: text().primaryKey(), // Format: ${userId}:${formId}
+    id: text().primaryKey(),
     userId: text().notNull(),
     formId: text()
       .notNull()
       .references(() => forms.id, { onDelete: "cascade" }),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_form_favorites_user_id").on(t.userId),
@@ -269,17 +259,17 @@ export const formFavorites = pgTable(
   ],
 );
 
-export const formNotificationPreferences = pgTable(
+export const formNotificationPreferences = sqliteTable(
   "form_notification_preferences",
   {
-    id: text().primaryKey(), // Format: ${userId}:${formId}
+    id: text().primaryKey(),
     userId: text().notNull(),
     formId: text()
       .notNull()
       .references(() => forms.id, { onDelete: "cascade" }),
-    inAppNotifications: boolean().notNull().default(false),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    inAppNotifications: integer({ mode: "boolean" }).notNull().default(false),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_form_notification_preferences_user_id").on(t.userId),
@@ -287,21 +277,21 @@ export const formNotificationPreferences = pgTable(
   ],
 );
 
-export const formSubmissionNotifications = pgTable(
+export const formSubmissionNotifications = sqliteTable(
   "form_submission_notifications",
   {
-    id: text().primaryKey(), // Format: ${userId}:${formId}
+    id: text().primaryKey(),
     userId: text().notNull(),
     formId: text()
       .notNull()
       .references(() => forms.id, { onDelete: "cascade" }),
     unreadCount: integer().notNull().default(0),
-    isRead: boolean().notNull().default(true),
-    firstUnreadAt: timestamp({ withTimezone: true }),
-    latestSubmissionAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    isRead: integer({ mode: "boolean" }).notNull().default(true),
+    firstUnreadAt: integer({ mode: "timestamp_ms" }),
+    latestSubmissionAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
     latestSubmissionId: text(),
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_form_submission_notifications_user_id").on(t.userId),
@@ -313,47 +303,41 @@ export const formSubmissionNotifications = pgTable(
 // ============================================================================
 // Form Visits Table (Analytics - Raw Events)
 // ============================================================================
-export const formVisits = pgTable(
+export const formVisits = sqliteTable(
   "form_visits",
   {
     id: text().primaryKey(),
     formId: text().notNull(),
 
-    // Anonymous tracking
     visitorHash: text().notNull(),
     sessionId: text().notNull(),
 
-    // Source attribution
     referrer: text(),
     utmSource: text(),
     utmMedium: text(),
     utmCampaign: text(),
 
-    // Device metadata
-    deviceType: text(), // 'desktop' | 'tablet' | 'mobile'
+    deviceType: text(),
     browser: text(),
     browserVersion: text(),
     os: text(),
     osVersion: text(),
 
-    // Geolocation (country-level, privacy-friendly)
     country: text(),
     countryName: text(),
     city: text(),
     region: text(),
 
-    // Timing
-    visitStartedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    visitEndedAt: timestamp({ withTimezone: true }),
+    visitStartedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    visitEndedAt: integer({ mode: "timestamp_ms" }),
     durationMs: integer(),
 
-    // Interaction tracking
-    didStartForm: boolean().notNull().default(false),
-    didSubmit: boolean().notNull().default(false),
+    didStartForm: integer({ mode: "boolean" }).notNull().default(false),
+    didSubmit: integer({ mode: "boolean" }).notNull().default(false),
     submissionId: text(),
 
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [index("idx_form_visits_form_id").on(t.formId)],
 );
@@ -361,7 +345,7 @@ export const formVisits = pgTable(
 // ============================================================================
 // Form Question Progress Table (Question Drop-off Tracking)
 // ============================================================================
-export const formQuestionProgress = pgTable("form_question_progress", {
+export const formQuestionProgress = sqliteTable("form_question_progress", {
   id: text().primaryKey(),
   formId: text().notNull(),
   visitId: text().notNull(),
@@ -371,25 +355,24 @@ export const formQuestionProgress = pgTable("form_question_progress", {
   questionType: text(),
   questionIndex: integer().notNull(),
 
-  viewedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  startedAt: timestamp({ withTimezone: true }),
-  completedAt: timestamp({ withTimezone: true }),
-  wasLastQuestion: boolean().notNull().default(false),
+  viewedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  startedAt: integer({ mode: "timestamp_ms" }),
+  completedAt: integer({ mode: "timestamp_ms" }),
+  wasLastQuestion: integer({ mode: "boolean" }).notNull().default(false),
 
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
 });
 
 // ============================================================================
 // Form Analytics Daily Table (Pre-aggregated Daily Metrics)
 // ============================================================================
-export const formAnalyticsDaily = pgTable(
+export const formAnalyticsDaily = sqliteTable(
   "form_analytics_daily",
   {
     id: text().primaryKey(),
     formId: text().notNull(),
-    date: text().notNull(), // 'YYYY-MM-DD'
+    date: text().notNull(),
 
-    // Core metrics
     totalVisits: integer().notNull().default(0),
     uniqueVisitors: integer().notNull().default(0),
     totalSubmissions: integer().notNull().default(0),
@@ -397,19 +380,16 @@ export const formAnalyticsDaily = pgTable(
     avgDurationMs: integer(),
     medianDurationMs: integer(),
 
-    // Device breakdown
     deviceDesktop: integer().default(0),
     deviceMobile: integer().default(0),
     deviceTablet: integer().default(0),
 
-    // Browser breakdown
     browserChrome: integer().default(0),
     browserFirefox: integer().default(0),
     browserSafari: integer().default(0),
     browserEdge: integer().default(0),
     browserOther: integer().default(0),
 
-    // OS breakdown
     osWindows: integer().default(0),
     osMacos: integer().default(0),
     osIos: integer().default(0),
@@ -417,13 +397,12 @@ export const formAnalyticsDaily = pgTable(
     osLinux: integer().default(0),
     osOther: integer().default(0),
 
-    // Flexible breakdowns (JSONB for many values)
-    countryBreakdown: jsonb().notNull().default({}),
-    cityBreakdown: jsonb().notNull().default({}),
-    sourceBreakdown: jsonb().notNull().default({}),
+    countryBreakdown: text({ mode: "json" }).notNull().default({}),
+    cityBreakdown: text({ mode: "json" }).notNull().default({}),
+    sourceBreakdown: text({ mode: "json" }).notNull().default({}),
 
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [index("idx_form_analytics_daily_form_id_date").on(t.formId, t.date)],
 );
@@ -431,12 +410,12 @@ export const formAnalyticsDaily = pgTable(
 // ============================================================================
 // Form Dropoff Daily Table (Question Drop-off Aggregates)
 // ============================================================================
-export const formDropoffDaily = pgTable(
+export const formDropoffDaily = sqliteTable(
   "form_dropoff_daily",
   {
     id: text().primaryKey(),
     formId: text().notNull(),
-    date: text().notNull(), // 'YYYY-MM-DD'
+    date: text().notNull(),
     questionId: text().notNull(),
     questionIndex: integer().notNull(),
 
@@ -444,14 +423,26 @@ export const formDropoffDaily = pgTable(
     startCount: integer().notNull().default(0),
     completeCount: integer().notNull().default(0),
     dropoffCount: integer().notNull().default(0),
-    dropoffRate: integer(), // Percentage * 100
+    dropoffRate: integer(),
     completionRate: integer(),
 
-    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
   },
   (t) => [index("idx_form_dropoff_daily_form_id_date").on(t.formId, t.date)],
 );
+
+// ============================================================================
+// Upload Rate Limits (for public form file uploads)
+// ============================================================================
+
+export const uploadRateLimits = sqliteTable("upload_rate_limits", {
+  ip: text("ip").primaryKey(),
+  windowStart: integer("window_start", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  count: integer("count").notNull().default(0),
+});
 
 // Drizzle v2 Relations using defineRelations
 export const relations = defineRelations(
@@ -479,54 +470,23 @@ export const relations = defineRelations(
     formSubmissionNotifications,
   },
   (r) => ({
-    // User has many sessions, accounts, and forms they created
     user: {
-      sessions: r.many.session({
-        from: r.user.id,
-        to: r.session.userId,
-      }),
-      accounts: r.many.account({
-        from: r.user.id,
-        to: r.account.userId,
-      }),
-      twoFactors: r.many.twoFactor({
-        from: r.user.id,
-        to: r.twoFactor.userId,
-      }),
-      apikeys: r.many.apikey({
-        from: r.user.id,
-        to: r.apikey.userId,
-      }),
-      // Workspaces and forms are now owned by organization, not directly by user
-      // But we track who created them
+      sessions: r.many.session({ from: r.user.id, to: r.session.userId }),
+      accounts: r.many.account({ from: r.user.id, to: r.account.userId }),
+      twoFactors: r.many.twoFactor({ from: r.user.id, to: r.twoFactor.userId }),
+      apikeys: r.many.apikey({ from: r.user.id, to: r.apikey.userId }),
       createdWorkspaces: r.many.workspaces({
         from: r.user.id,
         to: r.workspaces.createdByUserId,
       }),
-      createdForms: r.many.forms({
-        from: r.user.id,
-        to: r.forms.createdByUserId,
-      }),
-      // Form versions published by user
+      createdForms: r.many.forms({ from: r.user.id, to: r.forms.createdByUserId }),
       publishedVersions: r.many.formVersions({
         from: r.user.id,
         to: r.formVersions.publishedByUserId,
       }),
-      // User's memberships in organizations
-      members: r.many.member({
-        from: r.user.id,
-        to: r.member.userId,
-      }),
-      // Organizations where user is a member
-      organizationMemberships: r.many.member({
-        from: r.user.id,
-        to: r.member.userId,
-      }),
-      // User's favorited forms
-      favorites: r.many.formFavorites({
-        from: r.user.id,
-        to: r.formFavorites.userId,
-      }),
+      members: r.many.member({ from: r.user.id, to: r.member.userId }),
+      organizationMemberships: r.many.member({ from: r.user.id, to: r.member.userId }),
+      favorites: r.many.formFavorites({ from: r.user.id, to: r.formFavorites.userId }),
       formNotificationPreferences: r.many.formNotificationPreferences({
         from: r.user.id,
         to: r.formNotificationPreferences.userId,
@@ -536,40 +496,20 @@ export const relations = defineRelations(
         to: r.formSubmissionNotifications.userId,
       }),
     },
-    // Session belongs to one user
     session: {
-      user: r.one.user({
-        from: r.session.userId,
-        to: r.user.id,
-      }),
+      user: r.one.user({ from: r.session.userId, to: r.user.id }),
     },
-    // Account belongs to one user
     account: {
-      user: r.one.user({
-        from: r.account.userId,
-        to: r.user.id,
-      }),
+      user: r.one.user({ from: r.account.userId, to: r.user.id }),
     },
-    // TwoFactor belongs to one user
     twoFactor: {
-      user: r.one.user({
-        from: r.twoFactor.userId,
-        to: r.user.id,
-      }),
+      user: r.one.user({ from: r.twoFactor.userId, to: r.user.id }),
     },
-    // Apikey belongs to one user
     apikey: {
-      user: r.one.user({
-        from: r.apikey.userId,
-        to: r.user.id,
-      }),
+      user: r.one.user({ from: r.apikey.userId, to: r.user.id }),
     },
-    // Organization has many members and workspaces
     organization: {
-      members: r.many.member({
-        from: r.organization.id,
-        to: r.member.organizationId,
-      }),
+      members: r.many.member({ from: r.organization.id, to: r.member.organizationId }),
       workspaces: r.many.workspaces({
         from: r.organization.id,
         to: r.workspaces.organizationId,
@@ -579,57 +519,32 @@ export const relations = defineRelations(
         to: r.invitation.organizationId,
       }),
     },
-    // Member belongs to one user and one organization
     member: {
-      user: r.one.user({
-        from: r.member.userId,
-        to: r.user.id,
-      }),
+      user: r.one.user({ from: r.member.userId, to: r.user.id }),
       organization: r.one.organization({
         from: r.member.organizationId,
         to: r.organization.id,
       }),
     },
-    // Invitation belongs to one organization
     invitation: {
       organization: r.one.organization({
         from: r.invitation.organizationId,
         to: r.organization.id,
       }),
     },
-    // Workspace belongs to one organization and has many forms
     workspaces: {
       organization: r.one.organization({
         from: r.workspaces.organizationId,
         to: r.organization.id,
       }),
-      creator: r.one.user({
-        from: r.workspaces.createdByUserId,
-        to: r.user.id,
-      }),
-      forms: r.many.forms({
-        from: r.workspaces.id,
-        to: r.forms.workspaceId,
-      }),
+      creator: r.one.user({ from: r.workspaces.createdByUserId, to: r.user.id }),
+      forms: r.many.forms({ from: r.workspaces.id, to: r.forms.workspaceId }),
     },
-    // Form belongs to one workspace
     forms: {
-      creator: r.one.user({
-        from: r.forms.createdByUserId,
-        to: r.user.id,
-      }),
-      workspace: r.one.workspaces({
-        from: r.forms.workspaceId,
-        to: r.workspaces.id,
-      }),
-      submissions: r.many.submissions({
-        from: r.forms.id,
-        to: r.submissions.formId,
-      }),
-      visits: r.many.formVisits({
-        from: r.forms.id,
-        to: r.formVisits.formId,
-      }),
+      creator: r.one.user({ from: r.forms.createdByUserId, to: r.user.id }),
+      workspace: r.one.workspaces({ from: r.forms.workspaceId, to: r.workspaces.id }),
+      submissions: r.many.submissions({ from: r.forms.id, to: r.submissions.formId }),
+      visits: r.many.formVisits({ from: r.forms.id, to: r.formVisits.formId }),
       analyticsDaily: r.many.formAnalyticsDaily({
         from: r.forms.id,
         to: r.formAnalyticsDaily.formId,
@@ -638,20 +553,12 @@ export const relations = defineRelations(
         from: r.forms.id,
         to: r.formDropoffDaily.formId,
       }),
-      // Version history
-      versions: r.many.formVersions({
-        from: r.forms.id,
-        to: r.formVersions.formId,
-      }),
+      versions: r.many.formVersions({ from: r.forms.id, to: r.formVersions.formId }),
       currentPublishedVersion: r.one.formVersions({
         from: r.forms.lastPublishedVersionId,
         to: r.formVersions.id,
       }),
-      // Users who favorited this form
-      favorites: r.many.formFavorites({
-        from: r.forms.id,
-        to: r.formFavorites.formId,
-      }),
+      favorites: r.many.formFavorites({ from: r.forms.id, to: r.formFavorites.formId }),
       notificationPreferences: r.many.formNotificationPreferences({
         from: r.forms.id,
         to: r.formNotificationPreferences.formId,
@@ -661,30 +568,18 @@ export const relations = defineRelations(
         to: r.formSubmissionNotifications.formId,
       }),
     },
-    // Form Version belongs to one form and one user (publisher)
     formVersions: {
-      form: r.one.forms({
-        from: r.formVersions.formId,
-        to: r.forms.id,
-      }),
+      form: r.one.forms({ from: r.formVersions.formId, to: r.forms.id }),
       publishedBy: r.one.user({
         from: r.formVersions.publishedByUserId,
         to: r.user.id,
       }),
     },
-    // Submission belongs to one form
     submissions: {
-      form: r.one.forms({
-        from: r.submissions.formId,
-        to: r.forms.id,
-      }),
+      form: r.one.forms({ from: r.submissions.formId, to: r.forms.id }),
     },
-    // Form Visits belongs to one form
     formVisits: {
-      form: r.one.forms({
-        from: r.formVisits.formId,
-        to: r.forms.id,
-      }),
+      form: r.one.forms({ from: r.formVisits.formId, to: r.forms.id }),
       submission: r.one.submissions({
         from: r.formVisits.submissionId,
         to: r.submissions.id,
@@ -694,41 +589,22 @@ export const relations = defineRelations(
         to: r.formQuestionProgress.visitId,
       }),
     },
-    // Form Question Progress belongs to form and visit
     formQuestionProgress: {
-      form: r.one.forms({
-        from: r.formQuestionProgress.formId,
-        to: r.forms.id,
-      }),
+      form: r.one.forms({ from: r.formQuestionProgress.formId, to: r.forms.id }),
       visit: r.one.formVisits({
         from: r.formQuestionProgress.visitId,
         to: r.formVisits.id,
       }),
     },
-    // Form Analytics Daily belongs to form
     formAnalyticsDaily: {
-      form: r.one.forms({
-        from: r.formAnalyticsDaily.formId,
-        to: r.forms.id,
-      }),
+      form: r.one.forms({ from: r.formAnalyticsDaily.formId, to: r.forms.id }),
     },
-    // Form Dropoff Daily belongs to form
     formDropoffDaily: {
-      form: r.one.forms({
-        from: r.formDropoffDaily.formId,
-        to: r.forms.id,
-      }),
+      form: r.one.forms({ from: r.formDropoffDaily.formId, to: r.forms.id }),
     },
-    // Form Favorites belongs to user and form
     formFavorites: {
-      user: r.one.user({
-        from: r.formFavorites.userId,
-        to: r.user.id,
-      }),
-      form: r.one.forms({
-        from: r.formFavorites.formId,
-        to: r.forms.id,
-      }),
+      user: r.one.user({ from: r.formFavorites.userId, to: r.user.id }),
+      form: r.one.forms({ from: r.formFavorites.formId, to: r.forms.id }),
     },
     formNotificationPreferences: {
       user: r.one.user({
@@ -758,16 +634,6 @@ export const relations = defineRelations(
 // ============================================================================
 
 export const WorkspaceZod = createSelectSchema(workspaces);
-// ============================================================================
-// Upload Rate Limits (for public form file uploads)
-// ============================================================================
-
-export const uploadRateLimits = pgTable("upload_rate_limits", {
-  ip: text("ip").primaryKey(),
-  windowStart: timestamp("window_start", { withTimezone: true }).notNull().defaultNow(),
-  count: integer("count").notNull().default(0),
-});
-
 export const FormZod = createSelectSchema(forms);
 export const FormVersionZod = createSelectSchema(formVersions);
 export const SubmissionZod = createSelectSchema(submissions);
@@ -776,12 +642,10 @@ export const FormQuestionProgressZod = createSelectSchema(formQuestionProgress);
 export const FormAnalyticsDailyZod = createSelectSchema(formAnalyticsDaily);
 export const FormDropoffDailyZod = createSelectSchema(formDropoffDaily);
 
-// Organization schemas
 export const OrganizationZod = createSelectSchema(organization);
 export const MemberZod = createSelectSchema(member);
 export const InvitationZod = createSelectSchema(invitation);
 
-// Form Favorites schema
 export const FormFavoriteZod = createSelectSchema(formFavorites);
 export const FormNotificationPreferenceZod = createSelectSchema(formNotificationPreferences);
 export const FormSubmissionNotificationZod = createSelectSchema(formSubmissionNotifications);

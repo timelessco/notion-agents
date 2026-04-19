@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import * as schema from "@/db/schema";
 import { db } from "@/db";
 import {
@@ -16,13 +17,15 @@ import { magicLink, organization, testUtils } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
 
+const e = env as unknown as Env;
+
 const polarClient = new Polar({
-  accessToken: process.env.POLAR_ACCESS_TOKEN ?? "",
+  accessToken: e.POLAR_ACCESS_TOKEN ?? "",
   server: "sandbox", // TODO: Change to production
 });
 
 const getServerBaseURL = () => {
-  const url = process.env.BETTER_AUTH_URL || process.env.VERCEL_URL || "http://localhost:3000";
+  const url = e.BETTER_AUTH_URL || "http://localhost:3000";
   return url.startsWith("http") ? url : `https://${url}`;
 };
 
@@ -30,7 +33,7 @@ export const auth = betterAuth({
   baseURL: getServerBaseURL(),
   appName: APP_NAME,
   database: drizzleAdapter(db, {
-    provider: "pg",
+    provider: "sqlite",
     schema,
   }),
   emailAndPassword: {
@@ -124,17 +127,17 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: e.GOOGLE_CLIENT_ID as string,
+      clientSecret: e.GOOGLE_CLIENT_SECRET as string,
     },
   },
   trustedOrigins: [
-    "https://*.vercel.app",
-    "https://*.vercel-preview-app",
-    "https://localhost:3001",
+    "https://agent-notion.tancn.dev",
+    "https://*.workers.dev",
+    "http://localhost:3000",
   ],
   plugins: [
-    ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
+    ...(import.meta.env.MODE === "test" ? [testUtils()] : []),
     magicLink({
       async sendMagicLink({ email, url }) {
         if (import.meta.env.DEV) {
@@ -150,7 +153,7 @@ export const auth = betterAuth({
         logger(
           `[Org] sendInvitationEmail callback START - email: ${data.email}, org: ${data.organization.name}, inviter: ${data.inviter.user.name}, invitationId: ${data.id}`,
         );
-        const inviteLink = `${process.env.APP_URL || "http://localhost:3000"}/accept-invite?invitationId=${data.id}`;
+        const inviteLink = `${e.APP_URL || "http://localhost:3000"}/accept-invite?invitationId=${data.id}`;
         logger(`[Org] Generated invite link: ${inviteLink}`);
         void sendOrgInvitationEmail(
           data.email,
@@ -181,13 +184,13 @@ export const auth = betterAuth({
             },
           ],
           successUrl:
-            (process.env.APP_URL || "http://localhost:3000") +
+            (e.APP_URL || "http://localhost:3000") +
             "/settings/billing?checkout_id={CHECKOUT_ID}",
           authenticatedUsersOnly: true,
         }),
         portal(),
         webhooks({
-          secret: process.env.POLAR_WEBHOOK_SECRET ?? "",
+          secret: (e as unknown as Record<string, string>).POLAR_WEBHOOK_SECRET ?? "",
         }),
       ],
     }),

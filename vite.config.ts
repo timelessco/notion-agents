@@ -1,8 +1,7 @@
+import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
-import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
-import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 import type { Plugin } from "vite";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -85,48 +84,10 @@ const crossOriginIsolationPlugin = (): Plugin => {
 
 const config = defineConfig({
   plugins: [
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
     serveWasmFilesPlugin(),
     embedCacheHeadersPlugin(),
     crossOriginIsolationPlugin(),
-    devtools({
-      editor: {
-        name: "Cursor",
-        open: async (path, lineNumber, columnNumber) => {
-          const { exec } = await import("node:child_process");
-          exec(
-            // or windsurf/cursor/webstorm/cursor/cursor
-            `cursor -g "${path.replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
-          );
-        },
-      },
-      // editor: {
-      //   name: "Antigravity",
-      //   open: async (path, lineNumber, columnNumber) => {
-      //     const { exec } = await import("node:child_process");
-      //     exec(
-      //       `antigravity -g "${path.replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
-      //     );
-      //   },
-      // },
-      enhancedLogs: {
-        enabled: true,
-      },
-      logging: true,
-      consolePiping: {
-        enabled: true,
-        levels: ["log", "warn", "error", "info", "debug"],
-      },
-    }),
-    nitro({
-      vercel: {
-        functions: {
-          maxDuration: 799,
-          runtime: "bun1.x",
-          supportsResponseStreaming: true,
-        },
-      },
-    }),
-    // this is the plugin that enables path aliases
     viteTsConfigPaths({
       projects: ["./tsconfig.json"],
     }),
@@ -150,20 +111,32 @@ const config = defineConfig({
       "@journeyapps/wa-sqlite",
     ],
   },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes("@platejs/") || id.includes("platejs")) return "editor";
-          if (id.includes("@radix-ui/")) return "ui";
-          if (id.includes("@sentry/")) return "sentry";
-        },
+  environments: {
+    ssr: {
+      // Devtools packages pull in solid-js/web which resolves to its `worker`
+      // build in the Cloudflare SSR env — but that build lacks `use` and
+      // `setStyleProperty` which the devtools bundles import. They are client-
+      // only anyway (gated behind NODE_ENV === "development" on the client), so
+      // skip them in the SSR prebundle.
+      optimizeDeps: {
+        exclude: [
+          "@tanstack/react-devtools",
+          "@tanstack/react-router-devtools",
+          "@tanstack/react-hotkeys-devtools",
+          "@tanstack/react-pacer-devtools",
+          "@tanstack/devtools-utils",
+          "@tanstack/hotkeys-devtools",
+          "agentation",
+          "solid-js/web",
+        ],
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 2000,
+  },
   ssr: {
     noExternal: [/^@platejs\//, "katex", "react-tweet"],
-    external: ["dexie", "tanstack-dexie-db-collection", "fsevents"],
   },
 });
 

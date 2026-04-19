@@ -1,6 +1,5 @@
+import { env } from "cloudflare:workers";
 import { createFileRoute } from "@tanstack/react-router";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { publicCorsHeaders } from "@/lib/config/embed-cors";
 
 const CORS_HEADERS = {
@@ -23,13 +22,20 @@ const symbolCache = new Map<string, string>();
 const loadSprite = (): Promise<string> => {
   if (spriteCache) return Promise.resolve(spriteCache);
   if (spritePromise) return spritePromise;
-  const path = join(process.cwd(), "public", "sprite.svg");
-  spritePromise = readFile(path, "utf-8").then((text) => {
-    spriteCache = text;
-    spritePromise = null;
-    return text;
-  });
-  return spritePromise;
+  const e = env as unknown as Env;
+  // ASSETS is the static-assets binding configured in wrangler.jsonc.
+  const p: Promise<string> = e.ASSETS.fetch(new Request("https://assets/sprite.svg"))
+    .then((res: Response) => {
+      if (!res.ok) throw new Error(`sprite fetch ${res.status}`);
+      return res.text();
+    })
+    .then((text: string) => {
+      spriteCache = text;
+      spritePromise = null;
+      return text;
+    });
+  spritePromise = p;
+  return p;
 };
 
 // Defensive scrub: even though sprite.svg is a trusted build artifact, strip

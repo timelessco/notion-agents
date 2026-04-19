@@ -87,7 +87,7 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
       : undefined;
 
     const searchCondition = search?.trim()
-      ? sql`${submissions.data}::text ILIKE ${"%" + search.trim() + "%"}`
+      ? sql`${submissions.data} LIKE ${"%" + search.trim() + "%"}`
       : undefined;
 
     const conditions = [eq(submissions.formId, formId), cursorCondition, searchCondition].filter(

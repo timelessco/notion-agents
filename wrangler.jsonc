@@ -1,0 +1,37 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "open-notion",
+	"main": "./src/server.ts",
+	"compatibility_date": "2026-04-19",
+	"compatibility_flags": ["nodejs_compat"],
+	"placement": { "mode": "smart" },
+	"assets": {
+		"directory": "./dist/client",
+		"binding": "ASSETS"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "open-notion",
+			"database_id": "16f3dfc5-c17e-42bd-a8ff-d908f9da268a",
+			"migrations_dir": "./drizzle"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "UPLOADS",
+			"bucket_name": "open-notion-uploads"
+		}
+	],
+	"routes": [
+		{ "pattern": "agent-notion.tancn.dev", "custom_domain": true }
+	],
+	"vars": {
+		"PUBLIC_UPLOADS_URL": "https://uploads.agent-notion.tancn.dev",
+		"APP_URL": "https://agent-notion.tancn.dev",
+		"BETTER_AUTH_URL": "https://agent-notion.tancn.dev"
+	}
+}

@@ -52,34 +52,34 @@ const getClientIp = (): string => {
   return "unknown";
 };
 
-// Inlined as a SQL literal because Postgres can't concatenate a parameterized
-// integer with text inside an interval cast. Safe: it's a build-time constant.
-const WINDOW_INTERVAL_SQL = sql.raw(`interval '${WINDOW_MINUTES} minutes'`);
+const WINDOW_MS = WINDOW_MINUTES * 60_000;
+const HOUR_MS = 60 * 60_000;
 
 const checkUploadRateLimit = async (ip: string): Promise<void> => {
+  const now = Date.now();
+
   // Cleanup ~1% of requests
   if (Math.random() < CLEANUP_PROBABILITY) {
-    await db.execute(
-      sql`DELETE FROM upload_rate_limits WHERE window_start < now() - interval '1 hour'`,
-    );
+    await db.run(sql`DELETE FROM upload_rate_limits WHERE window_start < ${now - HOUR_MS}`);
   }
 
-  // Atomic upsert: insert with count=1, or on conflict either reset (window expired)
-  // or increment.
+  // Timestamps are stored as ms-epoch integers (see schema). Comparisons and
+  // resets work on raw integer arithmetic — no SQLite `now()` dependency.
+  const windowExpiredCutoff = now - WINDOW_MS;
   const result = await db
     .insert(uploadRateLimits)
-    .values({ ip, count: 1 })
+    .values({ ip, count: 1, windowStart: new Date(now) })
     .onConflictDoUpdate({
       target: uploadRateLimits.ip,
       set: {
         count: sql`CASE
-          WHEN ${uploadRateLimits.windowStart} < now() - ${WINDOW_INTERVAL_SQL}
+          WHEN ${uploadRateLimits.windowStart} < ${windowExpiredCutoff}
             THEN 1
           ELSE ${uploadRateLimits.count} + 1
         END`,
         windowStart: sql`CASE
-          WHEN ${uploadRateLimits.windowStart} < now() - ${WINDOW_INTERVAL_SQL}
-            THEN now()
+          WHEN ${uploadRateLimits.windowStart} < ${windowExpiredCutoff}
+            THEN ${now}
           ELSE ${uploadRateLimits.windowStart}
         END`,
       },

@@ -3,10 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "caddy run --config Caddyfile & sleep 1 && printf '\\n  ➜  HTTP/2: https://localhost:%s\\n\\n' \"${CADDY_PORT:-3001}\" && vite dev --port ${PORT:-3000}",
-    "dev:auto": "p=3000; while lsof -iTCP:$p -sTCP:LISTEN >/dev/null 2>&1; do p=$((p+1)); done; PORT=$p CADDY_PORT=$((p+1)) bun dev",
-    "dev:worktree": "cp -f /Users/vijayabaskar/work/better-form/.env .env && bun dev:auto",
-    "preview": "vite preview",
+    "dev": "vite dev --port ${PORT:-3000}",
+    "preview": "wrangler dev",
     "test": "vitest run",
     "lint": "oxlint && knip --strict --use-tsconfig-files",
     "lint:fix": "oxlint --fix",
@@ -17,13 +15,13 @@
     "check": "ultracite check",
     "check:fix": "bun run check --fix",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "db:pull": "drizzle-kit pull",
+    "db:migrate:local": "wrangler d1 migrations apply open-notion --local",
+    "db:migrate:remote": "wrangler d1 migrations apply open-notion --remote",
     "db:studio": "drizzle-kit studio",
+    "cf-typegen": "wrangler types --env-interface Env",
     "build:embed": "esbuild src/embed/embed-popup.ts --bundle --minify --outfile=public/embed/popup.js --target=es2020 --format=iife",
     "build": "bun run build:embed && NODE_OPTIONS='--max-old-space-size=8192' vite build",
-    "start": "node .output/server/index.mjs",
+    "deploy": "bun run build && wrangler deploy",
     "fix": "ultracite fix"
   },
   "dependencies": {
@@ -69,7 +67,8 @@
     "@platejs/toggle": "^52.0.11",
     "@polar-sh/better-auth": "^1.8.3",
     "@polar-sh/sdk": "^0.42.5",
-    "@sentry/tanstackstart-react": "^10.44.0",
+    "@sentry/cloudflare": "^10.44.0",
+    "@sentry/react": "^10.44.0",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/browser-db-sqlite-persistence": "^0.1.8",
     "@tanstack/db": "^0.6.4",
@@ -93,7 +92,6 @@
     "@tanstack/router-plugin": "^1.166.14",
     "@tanstack/zod-adapter": "^1.166.9",
     "@udecode/cn": "^52.3.4",
-    "@vercel/blob": "^2.3.1",
     "agentation": "^2.3.3",
     "ai": "5.0.28",
     "better-auth": "^1.5.6",
@@ -112,9 +110,7 @@
     "lucide-react": "^0.576.0",
     "match-sorter": "^8.2.0",
     "motion": "^12.38.0",
-    "nitro": "latest",
     "pdf-lib": "^1.17.1",
-    "pg": "^8.20.0",
     "platejs": "^52.3.4",
     "react": "^19.2.4",
     "react-day-picker": "^9.14.0",
@@ -145,6 +141,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.18.0",
     "@faker-js/faker": "^10.3.0",
     "@tanstack/devtools-vite": "^0.5.5",
     "@tanstack/intent": "^0.0.29",
@@ -152,7 +149,6 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.19.15",
-    "@types/pg": "^8.18.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
@@ -171,7 +167,10 @@
     "ultracite": "7.2.5",
     "vite": "^7.3.1",
     "vitest": "^3.2.4",
-    "web-vitals": "^5.1.0"
+    "web-vitals": "^5.1.0",
+    "wrangler": "^4.55.0",
+    "better-sqlite3": "^11.5.0",
+    "@types/better-sqlite3": "^7.6.12"
   },
   "packageManager": "bun@1.2.14"
 }

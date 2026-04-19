@@ -3,8 +3,8 @@ import type { KnipConfig } from "knip";
 export default {
   entry: [
     "src/routes/**/*.{ts,tsx}", // Routes as entry points
+    "src/server.ts", // Cloudflare Workers entry
     "src/embed/*.ts", // Embed scripts
-    "instrument.server.mjs", // Sentry
   ],
   project: ["src/**/*.{ts,tsx}"],
   ignore: [
@@ -23,7 +23,11 @@ export default {
     "tw-animate-css", // tailwind plugin
     "2026-01-08-platjs", // self-reference
     "katex", // used in CSS
-    "@sentry/tanstackstart-react", // used in instrument.server.mjs (knip entry misses it)
+    "@sentry/cloudflare", // used in src/server.ts
+    "@sentry/react", // client-side Sentry init
+    "better-sqlite3", // used only in tests
+    "@types/better-sqlite3",
+    "wrangler", // CLI
     "shadcn", // imported in src/styles/styles.css
     "tailwindcss", // vite plugin + CSS @import
     "type-fest", // HasRequiredKeys type import in auth-query.ts
