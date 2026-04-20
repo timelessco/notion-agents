@@ -1,6 +1,7 @@
 import type { Value } from "platejs";
 
 export type ColumnType =
+  | "title"
   | "text"
   | "email"
   | "phone"
@@ -70,6 +71,7 @@ export type DatabaseColumn = {
 
 export type DatabaseRow = {
   id: string;
+  pageId?: string;
   icon?: string;
   cover?: string;
   title?: string;
@@ -107,9 +109,7 @@ export type FilterLeaf = {
   value?: unknown;
 };
 
-export type FilterNode =
-  | { combinator: "and" | "or"; children: FilterNode[] }
-  | FilterLeaf;
+export type FilterNode = { combinator: "and" | "or"; children: FilterNode[] } | FilterLeaf;
 
 export const isLeaf = (node: FilterNode): node is FilterLeaf =>
   (node as FilterLeaf).op !== undefined;
@@ -122,7 +122,16 @@ export type ConditionalColorRule = {
   colorIdx: number;
 };
 
-export type DatabaseLayout = "table" | "board" | "gallery" | "list" | "calendar";
+export type DatabaseLayout = "table" | "board" | "gallery" | "list" | "calendar" | "chart";
+
+export type ChartViewConfig = {
+  type: "bar" | "line" | "area" | "pie" | "donut";
+  xColId: string;
+  yColId?: string;
+  agg: "count" | "sum" | "avg" | "min" | "max";
+  dateBucket?: "day" | "week" | "month" | "year";
+  seriesColId?: string;
+};
 
 export type DatabaseView = {
   id: string;
@@ -136,11 +145,13 @@ export type DatabaseView = {
   boardColumnColId?: string;
   calendarDateColId?: string;
   galleryCoverSource?: "cover" | "firstFile" | "none";
+  chart?: ChartViewConfig;
 };
 
 export type DatabaseElementData = {
   type: "database";
   id?: string;
+  pageId?: string;
   title: string;
   columns: DatabaseColumn[];
   rows: DatabaseRow[];

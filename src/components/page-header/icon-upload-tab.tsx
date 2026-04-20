@@ -27,14 +27,7 @@ export const IconUploadTab = ({
   const [showCrop, setShowCrop] = useState(false);
   const [
     { isDragging, errors },
-    {
-      handleDragEnter,
-      handleDragLeave,
-      handleDragOver,
-      handleDrop,
-      openFileDialog,
-      getInputProps,
-    },
+    { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
   ] = useFileUpload({
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024,

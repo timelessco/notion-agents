@@ -132,6 +132,12 @@ const config = defineConfig({
       },
     },
   },
+  server: {
+    strictPort: true,
+  },
+  preview: {
+    strictPort: true,
+  },
   build: {
     chunkSizeWarningLimit: 2000,
   },

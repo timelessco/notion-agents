@@ -20,12 +20,12 @@ const aggregate = (values: unknown[], agg: RollupAgg): unknown => {
     case "max":
       return nums.length ? Math.max(...nums) : "";
     case "earliest": {
-      const dates = values.filter((v) => typeof v === "string" && v);
-      return dates.length ? dates.sort()[0] : "";
+      const dates = values.filter((v): v is string => typeof v === "string" && v !== "");
+      return dates.length ? dates.reduce((a, b) => (a < b ? a : b)) : "";
     }
     case "latest": {
-      const dates = values.filter((v) => typeof v === "string" && v);
-      return dates.length ? dates.sort().slice(-1)[0] : "";
+      const dates = values.filter((v): v is string => typeof v === "string" && v !== "");
+      return dates.length ? dates.reduce((a, b) => (a > b ? a : b)) : "";
     }
     case "concat":
       return values.filter((v) => v !== "" && v != null).join(", ");
@@ -50,9 +50,7 @@ export const RollupCell = ({
     const tgtCol = columns.find((c) => c.id === targetColId);
     if (!relCol || !tgtCol) return "—";
     const linkedIds = Array.isArray(row.cells[relationColId])
-      ? (row.cells[relationColId] as unknown[]).filter(
-          (x): x is string => typeof x === "string",
-        )
+      ? (row.cells[relationColId] as unknown[]).filter((x): x is string => typeof x === "string")
       : [];
     const values = linkedIds
       .map((id) => allRows.find((r) => r.id === id)?.cells[targetColId])

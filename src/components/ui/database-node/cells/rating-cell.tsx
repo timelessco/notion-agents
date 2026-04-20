@@ -18,10 +18,7 @@ export const RatingCell = ({
   const v = typeof value === "number" ? value : 0;
 
   return (
-    <div
-      className="flex items-center gap-0.5"
-      onMouseDown={(e) => e.stopPropagation()}
-    >
+    <div className="flex items-center gap-0.5" onMouseDown={(e) => e.stopPropagation()}>
       {Array.from({ length: max }).map((_, i) => {
         const filled = i < v;
         return (
@@ -32,12 +29,7 @@ export const RatingCell = ({
             aria-label={`Set rating to ${i + 1}`}
             className="rounded-sm p-0.5 text-muted-foreground/40 hover:bg-muted/40"
           >
-            <Icon
-              className={cn(
-                "size-3.5",
-                filled && "fill-amber-400 text-amber-400",
-              )}
-            />
+            <Icon className={cn("size-3.5", filled && "fill-amber-400 text-amber-400")} />
           </button>
         );
       })}
@@ -55,15 +47,10 @@ export const LinearScaleCell = ({
   config?: ColumnConfig;
 }) => {
   const { min, max, step } =
-    config?.kind === "linear-scale"
-      ? config
-      : { min: 1, max: 10, step: 1 };
+    config?.kind === "linear-scale" ? config : { min: 1, max: 10, step: 1 };
   const v = typeof value === "number" ? value : "";
   return (
-    <div
-      className="flex items-center gap-1.5"
-      onMouseDown={(e) => e.stopPropagation()}
-    >
+    <div className="flex items-center gap-1.5" onMouseDown={(e) => e.stopPropagation()}>
       <input
         type="range"
         min={min}

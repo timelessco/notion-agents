@@ -1,10 +1,4 @@
-import type {
-  DatabaseColumn,
-  DatabaseRow,
-  FilterLeaf,
-  FilterNode,
-  SortEntry,
-} from "./types";
+import type { DatabaseColumn, DatabaseRow, FilterLeaf, FilterNode, SortEntry } from "./types";
 import { isLeaf } from "./types";
 
 const resolveCellDisplay = (v: unknown, col: DatabaseColumn): string => {
@@ -15,9 +9,7 @@ const resolveCellDisplay = (v: unknown, col: DatabaseColumn): string => {
   }
   if (col.type === "multi-select") {
     return Array.isArray(v)
-      ? v
-          .map((id) => (col.options ?? []).find((o) => o.id === id)?.label ?? "")
-          .join(" ")
+      ? v.map((id) => (col.options ?? []).find((o) => o.id === id)?.label ?? "").join(" ")
       : "";
   }
   return String(v);
@@ -32,11 +24,7 @@ const isEmptyVal = (v: unknown, col: DatabaseColumn): boolean => {
   return false;
 };
 
-const evalLeaf = (
-  leaf: FilterLeaf,
-  row: DatabaseRow,
-  columns: DatabaseColumn[],
-): boolean => {
+const evalLeaf = (leaf: FilterLeaf, row: DatabaseRow, columns: DatabaseColumn[]): boolean => {
   const col = columns.find((c) => c.id === leaf.colId);
   if (!col) return true;
   const raw =
@@ -135,15 +123,15 @@ export const applySort = (
       if (!col) continue;
       const av =
         col.type === "created-time"
-          ? a.createdAt ?? 0
+          ? (a.createdAt ?? 0)
           : col.type === "last-edited-time"
-            ? a.updatedAt ?? 0
+            ? (a.updatedAt ?? 0)
             : a.cells[colId];
       const bv =
         col.type === "created-time"
-          ? b.createdAt ?? 0
+          ? (b.createdAt ?? 0)
           : col.type === "last-edited-time"
-            ? b.updatedAt ?? 0
+            ? (b.updatedAt ?? 0)
             : b.cells[colId];
       const factor = dir === "asc" ? 1 : -1;
       if (typeof av === "number" && typeof bv === "number") {

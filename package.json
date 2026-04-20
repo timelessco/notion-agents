@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port ${PORT:-3000}",
+    "dev": "vite dev --port ${PORT:-3001}",
     "preview": "wrangler dev",
     "test": "vitest run",
     "lint": "oxlint && knip --strict --use-tsconfig-files",
@@ -127,7 +127,6 @@
     "recharts": "2.15.4",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "resend": "^6.9.4",
     "shadcn": "^3.8.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
@@ -148,11 +147,13 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.19.15",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
     "babel-plugin-react-compiler": "^1.0.0",
+    "better-sqlite3": "^11.5.0",
     "dotenv": "^16.6.1",
     "drizzle-kit": "1.0.0-beta.9-e89174b",
     "esbuild": "^0.24.2",
@@ -168,9 +169,7 @@
     "vite": "^7.3.1",
     "vitest": "^3.2.4",
     "web-vitals": "^5.1.0",
-    "wrangler": "^4.55.0",
-    "better-sqlite3": "^11.5.0",
-    "@types/better-sqlite3": "^7.6.12"
+    "wrangler": "^4.55.0"
   },
   "packageManager": "bun@1.2.14"
 }

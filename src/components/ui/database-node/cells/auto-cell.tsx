@@ -28,7 +28,5 @@ export const AutoTimeCell = ({
 };
 
 export const AutoUserCell = () => (
-  <span className="block w-full truncate text-left text-[13px] text-muted-foreground">
-    You
-  </span>
+  <span className="block w-full truncate text-left text-[13px] text-muted-foreground">You</span>
 );

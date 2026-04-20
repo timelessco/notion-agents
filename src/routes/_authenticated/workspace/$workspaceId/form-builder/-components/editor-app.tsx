@@ -1,6 +1,5 @@
 import { EditorKit } from "@/components/editor/editor-kit";
 import { Editor, EditorContainer } from "@/components/ui/editor";
-import { createFormButtonNode } from "@/components/ui/form-button-node";
 import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { migrateEditorContent } from "@/lib/editor/migrate-editor-content";
@@ -36,7 +35,6 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
     children: [{ text: "" }],
     type: "p",
   },
-  createFormButtonNode("submit") as unknown as TElement,
 ]);
 
 /**

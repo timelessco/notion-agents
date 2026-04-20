@@ -8,7 +8,7 @@ const getBaseURL = () => {
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
-  const url = process.env.VERCEL_URL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
+  const url = process.env.VERCEL_URL || process.env.BETTER_AUTH_URL || "http://localhost:3001";
   return url.startsWith("http") ? url : `https://${url}`;
 };
 

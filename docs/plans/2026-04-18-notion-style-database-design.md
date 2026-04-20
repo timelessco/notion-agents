@@ -47,7 +47,7 @@ type DatabaseView = {
   name: string;
   layout: "table" | "board" | "gallery" | "list" | "calendar";
   hiddenColumnIds: string[];
-  filters: FilterNode;           // and/or tree with leaf predicates
+  filters: FilterNode; // and/or tree with leaf predicates
   sorts: { colId: string; dir: "asc" | "desc" }[];
   groupBy?: string;
   conditionalColor?: ConditionalColorRule[];
@@ -116,8 +116,8 @@ type CellRegistryEntry = {
   defaultConfig?: ColumnConfig;
   isComputed?: boolean;
   coerce: (v: unknown, col: DatabaseColumn) => unknown;
-  Cell: ComponentType<CellProps>;          // inline table cell
-  PageField?: ComponentType<CellProps>;    // drawer/page variant, optional
+  Cell: ComponentType<CellProps>; // inline table cell
+  PageField?: ComponentType<CellProps>; // drawer/page variant, optional
   ConfigEditor?: ComponentType<ConfigProps>;
   filterOperators?: FilterOperator[];
   sortable?: boolean;

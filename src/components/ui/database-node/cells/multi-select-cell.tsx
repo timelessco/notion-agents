@@ -130,9 +130,7 @@ export const StatusCell = ({
   const id = typeof value === "string" ? value : "";
   const current = options.find((o) => o.id === id);
   const groups = config?.kind === "status" ? config.groups : [];
-  const color = current
-    ? MULTI_SELECT_COLORS[current.colorIdx % MULTI_SELECT_COLORS.length]
-    : null;
+  const color = current ? MULTI_SELECT_COLORS[current.colorIdx % MULTI_SELECT_COLORS.length] : null;
 
   return (
     <DropdownMenu>
@@ -151,7 +149,12 @@ export const StatusCell = ({
                   color.text,
                 )}
               >
-                <span className={cn("inline-block size-1.5 rounded-full", color.text.replace("text-", "bg-"))} />
+                <span
+                  className={cn(
+                    "inline-block size-1.5 rounded-full",
+                    color.text.replace("text-", "bg-"),
+                  )}
+                />
                 {current.label}
               </span>
             ) : (
@@ -180,7 +183,12 @@ export const StatusCell = ({
                   onClick={() => onChange(opt.id)}
                   className="gap-2 text-[13px]"
                 >
-                  <span className={cn("inline-block size-1.5 rounded-full", c.text.replace("text-", "bg-"))} />
+                  <span
+                    className={cn(
+                      "inline-block size-1.5 rounded-full",
+                      c.text.replace("text-", "bg-"),
+                    )}
+                  />
                   <span>{opt.label}</span>
                   {id === opt.id && <span className="ml-auto text-muted-foreground">✓</span>}
                 </DropdownMenuItem>

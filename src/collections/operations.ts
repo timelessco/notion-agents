@@ -67,8 +67,7 @@ export const createFormLocal = (
   workspaceId: string,
   titleOrOptions: string | { title?: string; kind?: "form" | "database" } = "Untitled",
 ): { form: Form; persisted: Promise<void> } => {
-  const opts =
-    typeof titleOrOptions === "string" ? { title: titleOrOptions } : titleOrOptions;
+  const opts = typeof titleOrOptions === "string" ? { title: titleOrOptions } : titleOrOptions;
   const title = opts.title ?? "Untitled";
   const kind = opts.kind ?? "form";
   const id = crypto.randomUUID();

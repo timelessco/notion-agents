@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
+import { ClientOnly } from "@/components/client-only";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
@@ -38,9 +39,11 @@ const RootDocument = ({ children }: { children: React.ReactNode }) => (
           {children}
           <Toaster richColors />
           {LazyDevtools && (
-            <Suspense>
-              <LazyDevtools />
-            </Suspense>
+            <ClientOnly>
+              <Suspense>
+                <LazyDevtools />
+              </Suspense>
+            </ClientOnly>
           )}
         </ThemeProvider>
       </HotkeysProvider>

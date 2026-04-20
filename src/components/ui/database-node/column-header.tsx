@@ -53,19 +53,27 @@ export const ColumnHeaderMenu = ({
           className="w-full rounded-sm border border-border bg-background px-2 py-1 text-[13px] outline-none focus:ring-2 focus:ring-ring/40"
         />
       </div>
-      <div className="px-1.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        Property type
-      </div>
-      {COLUMN_TYPES.map((t) => {
-        const { Icon, label } = CELL_REGISTRY[t];
-        return (
-          <DropdownMenuItem key={t} onClick={() => onChangeType(t)} className="gap-2 text-[13px]">
-            <Icon className="size-3.5 text-muted-foreground" />
-            {label}
-            {column.type === t && <span className="ml-auto text-muted-foreground">✓</span>}
-          </DropdownMenuItem>
-        );
-      })}
+      {column.type !== "title" && (
+        <>
+          <div className="px-1.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Property type
+          </div>
+          {COLUMN_TYPES.filter((t) => t !== "title").map((t) => {
+            const { Icon, label } = CELL_REGISTRY[t];
+            return (
+              <DropdownMenuItem
+                key={t}
+                onClick={() => onChangeType(t)}
+                className="gap-2 text-[13px]"
+              >
+                <Icon className="size-3.5 text-muted-foreground" />
+                {label}
+                {column.type === t && <span className="ml-auto text-muted-foreground">✓</span>}
+              </DropdownMenuItem>
+            );
+          })}
+        </>
+      )}
       {column.type === "select" && (
         <>
           <DropdownMenuSeparator />
@@ -132,14 +140,18 @@ export const ColumnHeaderMenu = ({
           </div>
         </>
       )}
-      <DropdownMenuSeparator />
-      <DropdownMenuItem
-        onClick={onDelete}
-        className="gap-2 text-[13px] text-destructive focus:text-destructive"
-      >
-        <Trash2 className="size-3.5" />
-        Delete property
-      </DropdownMenuItem>
+      {column.type !== "title" && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={onDelete}
+            className="gap-2 text-[13px] text-destructive focus:text-destructive"
+          >
+            <Trash2 className="size-3.5" />
+            Delete property
+          </DropdownMenuItem>
+        </>
+      )}
     </DropdownMenuContent>
   );
 };

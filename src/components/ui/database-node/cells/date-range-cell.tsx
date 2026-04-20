@@ -22,10 +22,7 @@ export const DateRangeCell = ({
 }) => {
   const range = asRange(value);
   return (
-    <div
-      className="flex items-center gap-1"
-      onMouseDown={(e) => e.stopPropagation()}
-    >
+    <div className="flex items-center gap-1" onMouseDown={(e) => e.stopPropagation()}>
       <input
         type="date"
         value={range.start}

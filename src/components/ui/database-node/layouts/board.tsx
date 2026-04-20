@@ -4,12 +4,7 @@ import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-node";
 import { cn } from "@/lib/utils";
 
 import { CELL_REGISTRY } from "../registry";
-import type {
-  DatabaseColumn,
-  DatabaseRow,
-  DatabaseView,
-  SelectOption,
-} from "../types";
+import type { DatabaseColumn, DatabaseRow, DatabaseView, SelectOption } from "../types";
 
 export const BoardLayout = ({
   view,
@@ -35,8 +30,7 @@ export const BoardLayout = ({
   renderCell: (row: DatabaseRow, col: DatabaseColumn) => React.ReactNode;
 }) => {
   const boardColId =
-    view.boardColumnColId ??
-    columns.find((c) => c.type === "select" || c.type === "status")?.id;
+    view.boardColumnColId ?? columns.find((c) => c.type === "select" || c.type === "status")?.id;
   const boardCol = columns.find((c) => c.id === boardColId);
 
   if (!boardCol || (boardCol.type !== "select" && boardCol.type !== "status")) {
@@ -86,9 +80,7 @@ export const BoardLayout = ({
             }}
           >
             <div className="flex items-center gap-1.5 border-b border-border/40 px-2 py-1.5 text-[12px] font-medium">
-              <span
-                className={cn("rounded-sm px-1.5 py-0.5 text-[11px]", color.bg, color.text)}
-              >
+              <span className={cn("rounded-sm px-1.5 py-0.5 text-[11px]", color.bg, color.text)}>
                 {col.label}
               </span>
               <span className="text-muted-foreground">{col.rows.length}</span>
@@ -124,9 +116,7 @@ export const BoardLayout = ({
                             onMouseDown={(e) => e.stopPropagation()}
                           >
                             <Icon className="size-3 shrink-0" />
-                            <div className="min-w-0 flex-1 truncate">
-                              {renderCell(row, c)}
-                            </div>
+                            <div className="min-w-0 flex-1 truncate">{renderCell(row, c)}</div>
                           </div>
                         );
                       })}

@@ -2,14 +2,19 @@ import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef, useReadOnly } from "platejs/react";
 import type { Value } from "platejs";
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLiveQuery } from "@tanstack/react-db";
 
 import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-node";
 import { cn } from "@/lib/utils";
+import { createPage, updatePage } from "@/lib/server-fn/pages";
+import { getDatabaseRowsCollection } from "@/collections/query/database-rows";
 
 import { applyFilter, applyGroup, applySort, conditionalColorFor } from "./filters";
 import { BoardLayout } from "./layouts/board";
 import { CalendarLayout } from "./layouts/calendar";
+import { ChartLayout } from "./layouts/chart";
 import { GalleryLayout } from "./layouts/gallery";
 import { ListLayout } from "./layouts/list";
 import { TableLayout } from "./layouts/table";
@@ -62,7 +67,7 @@ export const createDatabaseNode = (
     id: overrides.id ?? uid(),
     title: overrides.title ?? "",
     columns: overrides.columns ?? [
-      { id: nameColId, name: "Name", type: "text", width: 240 },
+      { id: nameColId, name: "Name", type: "title", width: 240 },
       {
         id: tagsColId,
         name: "Tags",
@@ -97,16 +102,15 @@ export const DatabaseElement = (props: PlateElementProps) => {
 
   const title = (element.title as string) ?? "";
   const columns = (element.columns as DatabaseColumn[]) ?? [];
-  const rows = (element.rows as DatabaseRow[]) ?? [];
+  const legacyInlineRows = (element.rows as DatabaseRow[]) ?? [];
   const storedViews = element.views as DatabaseView[] | undefined;
   const views: DatabaseView[] = useMemo(
     () => (storedViews && storedViews.length > 0 ? storedViews : [defaultView("table")]),
     [storedViews],
   );
   const storedActiveId = element.activeViewId as string | undefined;
-  const activeViewId = storedActiveId && views.some((v) => v.id === storedActiveId)
-    ? storedActiveId
-    : views[0].id;
+  const activeViewId =
+    storedActiveId && views.some((v) => v.id === storedActiveId) ? storedActiveId : views[0].id;
   const activeView = views.find((v) => v.id === activeViewId) ?? views[0];
 
   const [query, setQuery] = useState("");
@@ -131,27 +135,152 @@ export const DatabaseElement = (props: PlateElementProps) => {
   const databaseId = existingId ?? "";
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const routeParams = useParams({ strict: false }) as {
+    workspaceId?: string;
+    pageId?: string;
+  };
+  const workspaceId = routeParams.workspaceId;
+  const parentPageId = routeParams.pageId ?? null;
+
+  const dbPageIdFromEl = element.pageId as string | undefined;
+  const rowsCollection = useMemo(
+    () =>
+      dbPageIdFromEl && workspaceId
+        ? getDatabaseRowsCollection({
+            queryClient,
+            dbPageId: dbPageIdFromEl,
+            workspaceId,
+          })
+        : null,
+    [dbPageIdFromEl, workspaceId, queryClient],
+  );
+
+  const liveRecords = useLiveQuery(
+    (q) => {
+      if (!rowsCollection) return undefined;
+      return q.from({ r: rowsCollection });
+    },
+    [rowsCollection],
+  );
+
+  const rows = useMemo<DatabaseRow[]>(() => {
+    if (!rowsCollection) return legacyInlineRows;
+    const records = (liveRecords?.data ?? []) as Array<{
+      id: string;
+      title: string;
+      icon: string | null;
+      cover: string | null;
+      content: object[];
+      meta: Record<string, unknown> | null;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    return records
+      .map((rec) => ({
+        id: rec.id,
+        pageId: rec.id,
+        title: rec.title === "Untitled" ? "" : rec.title,
+        icon: rec.icon ?? undefined,
+        cover: rec.cover ?? undefined,
+        content: rec.content as Value,
+        cells: ((rec.meta as { cells?: Record<string, unknown> } | null)?.cells ?? {}) as Record<
+          string,
+          unknown
+        >,
+        createdAt: Date.parse(rec.createdAt),
+        updatedAt: Date.parse(rec.updatedAt),
+      }))
+      .toSorted((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0));
+  }, [rowsCollection, liveRecords?.data, legacyInlineRows]);
+
+  // Mirror database block as a `pages` row (kind=database) so it shows in the sidebar
+  // and can be opened as a standalone page. Only creates once per block.
+  const dbPageId = dbPageIdFromEl;
+  useEffect(() => {
+    if (readOnly || dbPageId || !workspaceId) return;
+    const newId = crypto.randomUUID();
+    createPage({
+      data: {
+        id: newId,
+        workspaceId,
+        parentId: parentPageId ?? undefined,
+        kind: "database",
+        title: title || "Untitled database",
+      },
+    })
+      .then(() => {
+        patch({ pageId: newId });
+        queryClient.invalidateQueries({ queryKey: ["pages", "list", workspaceId] });
+      })
+      .catch(() => {
+        // swallow; user will see a missing-sidebar-entry but block still works
+      });
+  }, [readOnly, dbPageId, workspaceId, parentPageId, title, patch, queryClient]);
+
+  // One-time migration: ensure a title column exists. Promote the first column
+  // to type=title so Name maps to the page title (Notion's convention).
+  useEffect(() => {
+    if (readOnly || columns.length === 0) return;
+    if (columns.some((c) => c.type === "title")) return;
+    const firstId = columns[0].id;
+    const nextCols = columns.map((c, i) => (i === 0 ? { ...c, type: "title" as ColumnType } : c));
+    if (rowsCollection) {
+      for (const row of rows) {
+        if (!row.pageId) continue;
+        const legacyVal = row.cells[firstId];
+        const legacyStr = typeof legacyVal === "string" ? legacyVal : "";
+        rowsCollection.update(row.pageId, (draft) => {
+          if ((!draft.title || draft.title === "Untitled") && legacyStr) draft.title = legacyStr;
+          const metaObj = (draft.meta as Record<string, unknown> | null) ?? {};
+          const prevCells = (metaObj as { cells?: Record<string, unknown> }).cells ?? {};
+          const { [firstId]: _omit, ...rest } = prevCells;
+          draft.meta = { ...metaObj, cells: rest };
+        });
+      }
+    }
+    patch({ columns: nextCols });
+  }, [readOnly, columns, rows, rowsCollection, patch]);
+
+  // One-time migration: move legacy inline rows into the pages collection.
+  // Only runs when we have a dbPageId, inline rows exist, and none were already promoted.
+  useEffect(() => {
+    if (readOnly || !rowsCollection || legacyInlineRows.length === 0) return;
+    if (legacyInlineRows.some((r) => r.pageId)) {
+      patch({ rows: [] });
+      return;
+    }
+    const nowIso = new Date().toISOString();
+    for (const legacy of legacyInlineRows) {
+      rowsCollection.insert({
+        id: crypto.randomUUID(),
+        title: legacy.title || "Untitled",
+        icon: legacy.icon ?? null,
+        cover: legacy.cover ?? null,
+        content: (legacy.content as object[] | undefined) ?? [],
+        meta: { cells: legacy.cells ?? {} },
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      } as never);
+    }
+    patch({ rows: [] });
+  }, [readOnly, rowsCollection, legacyInlineRows, patch]);
+
   const search = useSearch({ strict: false }) as { dbRow?: string };
   const searchDbRow = search.dbRow;
   const pageRowId = useMemo(() => {
     if (!searchDbRow || !databaseId) return null;
     const [bid, rid] = searchDbRow.split(":");
-    return bid === databaseId ? rid ?? null : null;
+    return bid === databaseId ? (rid ?? null) : null;
   }, [searchDbRow, databaseId]);
 
   const openAsPage = useCallback(
     (rowId: string) => {
-      if (!databaseId) return;
-      void navigate({
-        to: ".",
-        search: (prev: Record<string, unknown>) => ({
-          ...prev,
-          dbRow: `${databaseId}:${rowId}`,
-        }),
-        replace: false,
-      });
+      const row = rows.find((r) => r.id === rowId);
+      if (!row?.pageId) return;
+      void navigate({ to: "/pages/$pageId", params: { pageId: row.pageId } });
     },
-    [databaseId, navigate],
+    [rows, navigate],
   );
 
   const closePage = useCallback(() => {
@@ -174,9 +303,33 @@ export const DatabaseElement = (props: PlateElementProps) => {
 
   const setRows = useCallback(
     (updater: (prev: DatabaseRow[]) => DatabaseRow[]) => {
-      patch({ rows: updater(rows) });
+      if (rowsCollection) return;
+      patch({ rows: updater(legacyInlineRows) });
     },
-    [rows, patch],
+    [legacyInlineRows, patch, rowsCollection],
+  );
+
+  const mutateRowFields = useCallback(
+    (rowId: string, partial: Partial<DatabaseRow>) => {
+      const row = rows.find((r) => r.id === rowId);
+      if (rowsCollection && row?.pageId) {
+        rowsCollection.update(row.pageId, (draft) => {
+          if (partial.title !== undefined) draft.title = partial.title ?? "Untitled";
+          if (partial.icon !== undefined) draft.icon = partial.icon ?? null;
+          if (partial.cover !== undefined) draft.cover = partial.cover ?? null;
+          if (partial.content !== undefined) draft.content = partial.content as object[];
+          if (partial.cells !== undefined) {
+            const metaObj = (draft.meta as Record<string, unknown> | null) ?? {};
+            draft.meta = { ...metaObj, cells: partial.cells };
+          }
+        });
+        return;
+      }
+      setRows((prev) =>
+        prev.map((r) => (r.id === rowId ? { ...r, ...partial, updatedAt: Date.now() } : r)),
+      );
+    },
+    [rows, rowsCollection, setRows],
   );
 
   const setViews = useCallback(
@@ -186,87 +339,102 @@ export const DatabaseElement = (props: PlateElementProps) => {
     [views, patch],
   );
 
-  const setTitle = useCallback((v: string) => patch({ title: v }), [patch]);
+  const setTitle = useCallback(
+    (v: string) => {
+      patch({ title: v });
+      if (dbPageId) {
+        updatePage({ data: { id: dbPageId, title: v || "Untitled database" } })
+          .then(() => {
+            if (workspaceId)
+              queryClient.invalidateQueries({ queryKey: ["pages", "list", workspaceId] });
+          })
+          .catch(() => {});
+      }
+    },
+    [patch, dbPageId, workspaceId, queryClient],
+  );
 
   const updateActiveView = useCallback(
     (patchView: Partial<DatabaseView>) => {
-      setViews((prev) =>
-        prev.map((v) => (v.id === activeView.id ? { ...v, ...patchView } : v)),
-      );
+      setViews((prev) => prev.map((v) => (v.id === activeView.id ? { ...v, ...patchView } : v)));
     },
     [activeView.id, setViews],
   );
 
-  const touchRow = (row: DatabaseRow): DatabaseRow => ({
-    ...row,
-    updatedAt: Date.now(),
-  });
-
   const addRow = useCallback(
     (seed?: { colId: string; value: unknown } | string) => {
-      const now = Date.now();
       const seedObj = typeof seed === "string" ? undefined : seed;
       const initialCells = seedObj ? { [seedObj.colId]: seedObj.value } : {};
+      if (rowsCollection) {
+        const nowIso = new Date().toISOString();
+        const id = crypto.randomUUID();
+        rowsCollection.insert({
+          id,
+          title: "Untitled",
+          icon: null,
+          cover: null,
+          content: [],
+          meta: { cells: initialCells },
+          createdAt: nowIso,
+          updatedAt: nowIso,
+        } as never);
+        return;
+      }
+      const now = Date.now();
       setRows((prev) => [
         ...prev,
         { id: uid(), cells: initialCells, createdAt: now, updatedAt: now },
       ]);
     },
-    [setRows],
+    [rowsCollection, setRows],
   );
 
   const deleteRow = useCallback(
     (id: string) => {
+      if (rowsCollection) {
+        rowsCollection.delete(id);
+        return;
+      }
       setRows((prev) => prev.filter((r) => r.id !== id));
     },
-    [setRows],
+    [rowsCollection, setRows],
   );
 
   const updateCell = useCallback(
     (rowId: string, colId: string, value: unknown) => {
-      setRows((prev) =>
-        prev.map((r) =>
-          r.id === rowId ? touchRow({ ...r, cells: { ...r.cells, [colId]: value } }) : r,
-        ),
-      );
+      const row = rows.find((r) => r.id === rowId);
+      const nextCells = { ...row?.cells, [colId]: value };
+      mutateRowFields(rowId, { cells: nextCells });
     },
-    [setRows],
+    [rows, mutateRowFields],
   );
 
   const updateRowTitle = useCallback(
     (rowId: string, titleValue: string) => {
-      setRows((prev) =>
-        prev.map((r) => (r.id === rowId ? touchRow({ ...r, title: titleValue }) : r)),
-      );
+      mutateRowFields(rowId, { title: titleValue });
     },
-    [setRows],
+    [mutateRowFields],
   );
 
   const updateRowContent = useCallback(
     (rowId: string, content: Value) => {
-      setRows((prev) =>
-        prev.map((r) => (r.id === rowId ? touchRow({ ...r, content }) : r)),
-      );
+      mutateRowFields(rowId, { content });
     },
-    [setRows],
+    [mutateRowFields],
   );
 
   const updateRowIcon = useCallback(
     (rowId: string, icon: string | undefined) => {
-      setRows((prev) =>
-        prev.map((r) => (r.id === rowId ? touchRow({ ...r, icon }) : r)),
-      );
+      mutateRowFields(rowId, { icon });
     },
-    [setRows],
+    [mutateRowFields],
   );
 
   const updateRowCover = useCallback(
     (rowId: string, cover: string | undefined) => {
-      setRows((prev) =>
-        prev.map((r) => (r.id === rowId ? touchRow({ ...r, cover }) : r)),
-      );
+      mutateRowFields(rowId, { cover });
     },
-    [setRows],
+    [mutateRowFields],
   );
 
   const openRow = useMemo(() => rows.find((r) => r.id === openRowId) ?? null, [rows, openRowId]);
@@ -314,16 +482,35 @@ export const DatabaseElement = (props: PlateElementProps) => {
     [setColumns],
   );
 
+  const applyCellsToAllRows = useCallback(
+    (transform: (cells: Record<string, unknown>) => Record<string, unknown>) => {
+      if (rowsCollection) {
+        for (const row of rows) {
+          if (!row.pageId) continue;
+          const next = transform(row.cells);
+          rowsCollection.update(row.pageId, (draft) => {
+            const metaObj = (draft.meta as Record<string, unknown> | null) ?? {};
+            draft.meta = { ...metaObj, cells: next };
+          });
+        }
+        return;
+      }
+      setRows((prev) => prev.map((r) => ({ ...r, cells: transform(r.cells) })));
+    },
+    [rows, rowsCollection, setRows],
+  );
+
   const changeColumnType = useCallback(
     (id: string, type: ColumnType) => {
+      const existing = columns.find((c) => c.id === id);
+      if (!existing || existing.type === "title" || type === "title") return;
       setColumns((prev) =>
         prev.map((c) => {
           if (c.id !== id) return c;
           const next: DatabaseColumn = { ...c, type };
           const hadOptions =
             c.type === "select" || c.type === "multi-select" || c.type === "status";
-          const needsOptions =
-            type === "select" || type === "multi-select" || type === "status";
+          const needsOptions = type === "select" || type === "multi-select" || type === "status";
           if (needsOptions && !hadOptions) next.options = [];
           if (!needsOptions && hadOptions) next.options = undefined;
           if (type === "currency" && next.config?.kind !== "currency")
@@ -347,26 +534,24 @@ export const DatabaseElement = (props: PlateElementProps) => {
         }),
       );
       const col = columns.find((c) => c.id === id);
-      setRows((prev) =>
-        prev.map((r) => {
-          if (!col) return r;
-          const coerced = CELL_REGISTRY[type].coerce(r.cells[id], { ...col, type });
-          return { ...r, cells: { ...r.cells, [id]: coerced } };
-        }),
-      );
+      if (!col) return;
+      applyCellsToAllRows((cells) => ({
+        ...cells,
+        [id]: CELL_REGISTRY[type].coerce(cells[id], { ...col, type }),
+      }));
     },
-    [columns, setColumns, setRows],
+    [columns, setColumns, applyCellsToAllRows],
   );
 
   const deleteColumn = useCallback(
     (id: string) => {
+      const existing = columns.find((c) => c.id === id);
+      if (existing?.type === "title") return;
       setColumns((prev) => prev.filter((c) => c.id !== id));
-      setRows((prev) =>
-        prev.map((r) => {
-          const { [id]: _omit, ...rest } = r.cells;
-          return { ...r, cells: rest };
-        }),
-      );
+      applyCellsToAllRows((cells) => {
+        const { [id]: _omit, ...rest } = cells;
+        return rest;
+      });
       setViews((prev) =>
         prev.map((v) => ({
           ...v,
@@ -378,7 +563,7 @@ export const DatabaseElement = (props: PlateElementProps) => {
         })),
       );
     },
-    [setColumns, setRows, setViews],
+    [columns, setColumns, applyCellsToAllRows, setViews],
   );
 
   const addSelectOption = useCallback(
@@ -408,9 +593,7 @@ export const DatabaseElement = (props: PlateElementProps) => {
             ? c
             : {
                 ...c,
-                options: (c.options ?? []).map((o) =>
-                  o.id === optionId ? { ...o, label } : o,
-                ),
+                options: (c.options ?? []).map((o) => (o.id === optionId ? { ...o, label } : o)),
               },
         ),
       );
@@ -427,18 +610,16 @@ export const DatabaseElement = (props: PlateElementProps) => {
             : { ...c, options: (c.options ?? []).filter((o) => o.id !== optionId) },
         ),
       );
-      setRows((prev) =>
-        prev.map((r) => {
-          const v = r.cells[colId];
-          if (v === optionId) return { ...r, cells: { ...r.cells, [colId]: "" } };
-          if (Array.isArray(v) && v.includes(optionId)) {
-            return { ...r, cells: { ...r.cells, [colId]: v.filter((x) => x !== optionId) } };
-          }
-          return r;
-        }),
-      );
+      applyCellsToAllRows((cells) => {
+        const v = cells[colId];
+        if (v === optionId) return { ...cells, [colId]: "" };
+        if (Array.isArray(v) && v.includes(optionId)) {
+          return { ...cells, [colId]: v.filter((x) => x !== optionId) };
+        }
+        return cells;
+      });
     },
-    [setColumns, setRows],
+    [setColumns, applyCellsToAllRows],
   );
 
   const visibleColumns = useMemo(
@@ -479,17 +660,20 @@ export const DatabaseElement = (props: PlateElementProps) => {
   );
 
   const conditionalColorResolver = useCallback(
-    (row: DatabaseRow) =>
-      conditionalColorFor(row, columns, activeView.conditionalColor),
+    (row: DatabaseRow) => conditionalColorFor(row, columns, activeView.conditionalColor),
     [columns, activeView.conditionalColor],
   );
 
   const renderCell = useCallback(
     (row: DatabaseRow, col: DatabaseColumn) =>
-      renderCellFromRegistry(col, row, rows, columns, (next) =>
-        updateCell(row.id, col.id, next),
-      ),
-    [rows, columns, updateCell],
+      renderCellFromRegistry(col, row, rows, columns, (next) => {
+        if (col.type === "title") {
+          updateRowTitle(row.id, typeof next === "string" ? next : String(next ?? ""));
+          return;
+        }
+        updateCell(row.id, col.id, next);
+      }),
+    [rows, columns, updateCell, updateRowTitle],
   );
 
   const handleAddView = useCallback(
@@ -501,10 +685,7 @@ export const DatabaseElement = (props: PlateElementProps) => {
     [setViews, patch],
   );
 
-  const handleSelectView = useCallback(
-    (id: string) => patch({ activeViewId: id }),
-    [patch],
-  );
+  const handleSelectView = useCallback((id: string) => patch({ activeViewId: id }), [patch]);
 
   const handleRenameView = useCallback(
     (id: string, name: string) => {
@@ -573,6 +754,8 @@ export const DatabaseElement = (props: PlateElementProps) => {
             onOpenRow={setOpenRowId}
           />
         );
+      case "chart":
+        return <ChartLayout view={activeView} columns={columns} rows={derivedRows} />;
       case "table":
       default:
         return (
@@ -615,11 +798,7 @@ export const DatabaseElement = (props: PlateElementProps) => {
       className={cn("group/db my-4 select-none", props.className)}
       attributes={{ ...props.attributes, "data-plate-open-context-menu": true }}
     >
-      <div
-        contentEditable={false}
-        className="space-y-2"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+      <div contentEditable={false} className="space-y-2" onMouseDown={(e) => e.stopPropagation()}>
         <DatabaseToolbar
           title={title}
           onTitleChange={setTitle}

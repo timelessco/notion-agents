@@ -33,6 +33,5 @@ export const COVER_GALLERY = [
   },
 ] as const;
 
-const IS_MAC =
-  typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
+const IS_MAC = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
 export const PASTE_HINT = IS_MAC ? "\u2318+V" : "Ctrl+V";

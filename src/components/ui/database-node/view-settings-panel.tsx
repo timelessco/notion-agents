@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  BarChart3Icon,
   ChevronRightIcon,
   EyeIcon,
   FilterIcon,
@@ -27,6 +28,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
+import { ChartSettingsForm, defaultChartConfig } from "./chart-settings-form";
 import { CELL_REGISTRY } from "./registry";
 import type {
   DatabaseColumn,
@@ -47,6 +49,7 @@ const LAYOUT_META: Record<
   gallery: { label: "Gallery", Icon: GalleryThumbnailsIcon },
   list: { label: "List", Icon: LayoutListIcon },
   calendar: { label: "Calendar", Icon: CalendarIcon },
+  chart: { label: "Chart", Icon: BarChart3Icon },
 };
 
 const OP_LABEL: Record<FilterOperator, string> = {
@@ -95,10 +98,7 @@ const Section = ({
         <span className="flex-1 text-left">{label}</span>
         {right && <span className="text-[12px] text-muted-foreground">{right}</span>}
         <ChevronRightIcon
-          className={cn(
-            "size-3.5 text-muted-foreground transition-transform",
-            open && "rotate-90",
-          )}
+          className={cn("size-3.5 text-muted-foreground transition-transform", open && "rotate-90")}
         />
       </button>
       {open && <div className="px-3 pb-3">{children}</div>}
@@ -209,6 +209,16 @@ export const ViewSettingsPanel = ({
             })}
           </div>
         </Section>
+
+        {view.layout === "chart" && (
+          <Section Icon={BarChart3Icon} label="Chart">
+            <ChartSettingsForm
+              columns={columns}
+              config={view.chart ?? defaultChartConfig(columns)}
+              onChange={(next) => onUpdateView({ chart: next })}
+            />
+          </Section>
+        )}
 
         <Section Icon={EyeIcon} label="Property visibility" right={String(visibleCount)}>
           <div className="space-y-0.5">
@@ -394,11 +404,7 @@ export const ViewSettingsPanel = ({
         <Section
           Icon={ListIcon}
           label="Group"
-          right={
-            view.groupBy
-              ? columns.find((c) => c.id === view.groupBy)?.name ?? "On"
-              : "Off"
-          }
+          right={view.groupBy ? (columns.find((c) => c.id === view.groupBy)?.name ?? "On") : "Off"}
         >
           <div className="flex flex-col gap-1">
             <button
@@ -434,9 +440,7 @@ export const ViewSettingsPanel = ({
         </Section>
 
         <Section Icon={PaintbrushIcon} label="Conditional color">
-          <div className="px-1 py-2 text-[12px] text-muted-foreground">
-            Coming soon.
-          </div>
+          <div className="px-1 py-2 text-[12px] text-muted-foreground">Coming soon.</div>
         </Section>
       </SheetContent>
     </Sheet>

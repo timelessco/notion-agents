@@ -27,13 +27,20 @@ export const TextCell = ({
   }, [editing]);
 
   const inputType =
-    mode === "email" ? "email" : mode === "phone" ? "tel" : mode === "url" ? "url" : numeric ? "number" : "text";
+    mode === "email"
+      ? "email"
+      : mode === "phone"
+        ? "tel"
+        : mode === "url"
+          ? "url"
+          : numeric
+            ? "number"
+            : "text";
 
   if (!editing) {
     const label = draft || (numeric ? "0" : "Empty");
     const linkable = !numeric && draft && (mode === "email" || mode === "phone" || mode === "url");
-    const href =
-      mode === "email" ? `mailto:${draft}` : mode === "phone" ? `tel:${draft}` : draft;
+    const href = mode === "email" ? `mailto:${draft}` : mode === "phone" ? `tel:${draft}` : draft;
     return (
       <div className="flex min-w-0 items-center gap-1">
         <button

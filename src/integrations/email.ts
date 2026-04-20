@@ -1,13 +1,38 @@
-import { Resend } from "resend";
+import { env } from "cloudflare:workers";
 import { APP_NAME } from "@/lib/config/app-config";
 import { logger } from "@/lib/utils";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = `${APP_NAME} <noreply@share.recollect.so>`;
+const FROM_EMAIL = `${APP_NAME} <noreply@agent-notion.tmls.dev>`;
+
+const htmlToText = (html: string): string =>
+  html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const send = async (opts: { to: string; subject: string; html: string }) => {
+  try {
+    await env.EMAIL.send({
+      from: FROM_EMAIL,
+      to: opts.to,
+      subject: opts.subject,
+      html: opts.html,
+      text: htmlToText(opts.html),
+    });
+  } catch (error) {
+    logger("[Email] Send failed:", error);
+  }
+};
 
 export const sendMagicLinkEmail = async (email: string, url: string) => {
-  const { error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  await send({
     to: email,
     subject: `Sign in to ${APP_NAME}`,
     html: `
@@ -25,10 +50,6 @@ export const sendMagicLinkEmail = async (email: string, url: string) => {
 			</div>
 		`,
   });
-
-  if (error) {
-    logger("[Email] Failed to send magic link:", error);
-  }
 };
 
 export const sendOrgInvitationEmail = async (
@@ -37,8 +58,7 @@ export const sendOrgInvitationEmail = async (
   inviterName: string,
   inviteLink: string,
 ) => {
-  const { error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  await send({
     to: email,
     subject: `You're invited to join ${orgName}`,
     html: `
@@ -57,10 +77,6 @@ export const sendOrgInvitationEmail = async (
 			</div>
 		`,
   });
-
-  if (error) {
-    logger("[Email] Failed to send invitation:", error);
-  }
 };
 
 export const sendFormSubmissionNotification = async (
@@ -77,8 +93,7 @@ export const sendFormSubmissionNotification = async (
     )
     .join("");
 
-  const { error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  await send({
     to,
     subject: `New submission: ${formTitle}`,
     html: `
@@ -96,15 +111,10 @@ export const sendFormSubmissionNotification = async (
       </div>
     `,
   });
-
-  if (error) {
-    logger("[Email] Failed to send submission notification:", error);
-  }
 };
 
 export const sendRespondentConfirmation = async (to: string, subject: string, body: string) => {
-  const { error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  await send({
     to,
     subject,
     html: `
@@ -115,10 +125,6 @@ export const sendRespondentConfirmation = async (to: string, subject: string, bo
       </div>
     `,
   });
-
-  if (error) {
-    logger("[Email] Failed to send respondent confirmation:", error);
-  }
 };
 
 export const sendChangeEmailConfirmationEmail = async (
@@ -126,8 +132,7 @@ export const sendChangeEmailConfirmationEmail = async (
   newEmail: string,
   url: string,
 ) => {
-  const { error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  await send({
     to: email,
     subject: `Confirm your email change`,
     html: `
@@ -146,10 +151,6 @@ export const sendChangeEmailConfirmationEmail = async (
       </div>
     `,
   });
-
-  if (error) {
-    logger("[Email] Failed to send change email confirmation:", error);
-  }
 };
 
 const escapeHtml = (str: string): string =>

@@ -20,7 +20,9 @@ export const organization = sqliteTable("organization", {
   slug: text().unique(),
   logo: text(),
   metadata: text(),
-  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  createdAt: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 export const member = sqliteTable(
@@ -30,7 +32,9 @@ export const member = sqliteTable(
     userId: text().notNull(),
     organizationId: text().notNull(),
     role: text().notNull().default("member"),
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    createdAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (t) => [index("idx_member_user_id_org_id").on(t.userId, t.organizationId)],
 );
@@ -43,7 +47,9 @@ export const invitation = sqliteTable("invitation", {
   role: text().notNull().default("member"),
   status: text().notNull().default("pending"),
   expiresAt: integer({ mode: "timestamp_ms" }).notNull(),
-  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  createdAt: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 export const todos = sqliteTable("todos", {
@@ -60,8 +66,12 @@ export const user = sqliteTable("user", {
   email: text().notNull().unique(),
   emailVerified: integer({ mode: "boolean" }).notNull().default(false),
   image: text(),
-  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  createdAt: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
   username: text().unique(),
   displayUsername: text(),
   twoFactorEnabled: integer({ mode: "boolean" }).default(false),
@@ -74,8 +84,12 @@ export const session = sqliteTable("session", {
   expiresAt: integer({ mode: "timestamp_ms" }).notNull(),
   ipAddress: text(),
   userAgent: text(),
-  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  createdAt: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
   activeOrganizationId: text(),
 });
 
@@ -91,8 +105,12 @@ export const account = sqliteTable("account", {
   scope: text(),
   idToken: text(),
   password: text(),
-  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  createdAt: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 export const verification = sqliteTable("verification", {
@@ -100,8 +118,12 @@ export const verification = sqliteTable("verification", {
   identifier: text().notNull(),
   value: text().notNull(),
   expiresAt: integer({ mode: "timestamp_ms" }).notNull(),
-  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  createdAt: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
 export const twoFactor = sqliteTable("twoFactor", {
@@ -143,8 +165,12 @@ export const workspaces = sqliteTable(
     organizationId: text().notNull(),
     createdByUserId: text().notNull(),
     name: text().notNull().default("Collection"),
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    createdAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_workspaces_organization_id").on(t.organizationId),
@@ -196,8 +222,12 @@ export const forms = sqliteTable(
     dataRetention: integer({ mode: "boolean" }).default(false).notNull(),
     dataRetentionDays: integer(),
     customization: text({ mode: "json" }).default({}),
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    createdAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_forms_workspace_id").on(t.workspaceId),
@@ -217,8 +247,12 @@ export const formVersions = sqliteTable(
     customization: text({ mode: "json" }).default({}),
     title: text().notNull(),
     publishedByUserId: text().notNull(),
-    publishedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    publishedAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    createdAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_form_versions_form_id").on(t.formId),
@@ -234,8 +268,12 @@ export const submissions = sqliteTable(
     formVersionId: text(),
     data: text({ mode: "json" }).notNull().default({}),
     isCompleted: integer({ mode: "boolean" }).notNull().default(true),
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    createdAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_submissions_form_id").on(t.formId),
@@ -251,7 +289,9 @@ export const formFavorites = sqliteTable(
     formId: text()
       .notNull()
       .references(() => forms.id, { onDelete: "cascade" }),
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    createdAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_form_favorites_user_id").on(t.userId),
@@ -268,8 +308,12 @@ export const formNotificationPreferences = sqliteTable(
       .notNull()
       .references(() => forms.id, { onDelete: "cascade" }),
     inAppNotifications: integer({ mode: "boolean" }).notNull().default(false),
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    createdAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_form_notification_preferences_user_id").on(t.userId),
@@ -288,148 +332,22 @@ export const formSubmissionNotifications = sqliteTable(
     unreadCount: integer().notNull().default(0),
     isRead: integer({ mode: "boolean" }).notNull().default(true),
     firstUnreadAt: integer({ mode: "timestamp_ms" }),
-    latestSubmissionAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    latestSubmissionAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
     latestSubmissionId: text(),
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+    createdAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (t) => [
     index("idx_form_submission_notifications_user_id").on(t.userId),
     index("idx_form_submission_notifications_user_id_form_id").on(t.userId, t.formId),
     index("idx_form_submission_notifications_user_id_is_read").on(t.userId, t.isRead),
   ],
-);
-
-// ============================================================================
-// Form Visits Table (Analytics - Raw Events)
-// ============================================================================
-export const formVisits = sqliteTable(
-  "form_visits",
-  {
-    id: text().primaryKey(),
-    formId: text().notNull(),
-
-    visitorHash: text().notNull(),
-    sessionId: text().notNull(),
-
-    referrer: text(),
-    utmSource: text(),
-    utmMedium: text(),
-    utmCampaign: text(),
-
-    deviceType: text(),
-    browser: text(),
-    browserVersion: text(),
-    os: text(),
-    osVersion: text(),
-
-    country: text(),
-    countryName: text(),
-    city: text(),
-    region: text(),
-
-    visitStartedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-    visitEndedAt: integer({ mode: "timestamp_ms" }),
-    durationMs: integer(),
-
-    didStartForm: integer({ mode: "boolean" }).notNull().default(false),
-    didSubmit: integer({ mode: "boolean" }).notNull().default(false),
-    submissionId: text(),
-
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-  },
-  (t) => [index("idx_form_visits_form_id").on(t.formId)],
-);
-
-// ============================================================================
-// Form Question Progress Table (Question Drop-off Tracking)
-// ============================================================================
-export const formQuestionProgress = sqliteTable("form_question_progress", {
-  id: text().primaryKey(),
-  formId: text().notNull(),
-  visitId: text().notNull(),
-  visitorHash: text().notNull(),
-
-  questionId: text().notNull(),
-  questionType: text(),
-  questionIndex: integer().notNull(),
-
-  viewedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-  startedAt: integer({ mode: "timestamp_ms" }),
-  completedAt: integer({ mode: "timestamp_ms" }),
-  wasLastQuestion: integer({ mode: "boolean" }).notNull().default(false),
-
-  createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-});
-
-// ============================================================================
-// Form Analytics Daily Table (Pre-aggregated Daily Metrics)
-// ============================================================================
-export const formAnalyticsDaily = sqliteTable(
-  "form_analytics_daily",
-  {
-    id: text().primaryKey(),
-    formId: text().notNull(),
-    date: text().notNull(),
-
-    totalVisits: integer().notNull().default(0),
-    uniqueVisitors: integer().notNull().default(0),
-    totalSubmissions: integer().notNull().default(0),
-    uniqueSubmitters: integer().notNull().default(0),
-    avgDurationMs: integer(),
-    medianDurationMs: integer(),
-
-    deviceDesktop: integer().default(0),
-    deviceMobile: integer().default(0),
-    deviceTablet: integer().default(0),
-
-    browserChrome: integer().default(0),
-    browserFirefox: integer().default(0),
-    browserSafari: integer().default(0),
-    browserEdge: integer().default(0),
-    browserOther: integer().default(0),
-
-    osWindows: integer().default(0),
-    osMacos: integer().default(0),
-    osIos: integer().default(0),
-    osAndroid: integer().default(0),
-    osLinux: integer().default(0),
-    osOther: integer().default(0),
-
-    countryBreakdown: text({ mode: "json" }).notNull().default({}),
-    cityBreakdown: text({ mode: "json" }).notNull().default({}),
-    sourceBreakdown: text({ mode: "json" }).notNull().default({}),
-
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-  },
-  (t) => [index("idx_form_analytics_daily_form_id_date").on(t.formId, t.date)],
-);
-
-// ============================================================================
-// Form Dropoff Daily Table (Question Drop-off Aggregates)
-// ============================================================================
-export const formDropoffDaily = sqliteTable(
-  "form_dropoff_daily",
-  {
-    id: text().primaryKey(),
-    formId: text().notNull(),
-    date: text().notNull(),
-    questionId: text().notNull(),
-    questionIndex: integer().notNull(),
-
-    viewCount: integer().notNull().default(0),
-    startCount: integer().notNull().default(0),
-    completeCount: integer().notNull().default(0),
-    dropoffCount: integer().notNull().default(0),
-    dropoffRate: integer(),
-    completionRate: integer(),
-
-    createdAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-    updatedAt: integer({ mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
-  },
-  (t) => [index("idx_form_dropoff_daily_form_id_date").on(t.formId, t.date)],
 );
 
 // ============================================================================
@@ -461,10 +379,6 @@ export const relations = defineRelations(
     formVersions,
     workspaces,
     submissions,
-    formVisits,
-    formQuestionProgress,
-    formAnalyticsDaily,
-    formDropoffDaily,
     formFavorites,
     formNotificationPreferences,
     formSubmissionNotifications,
@@ -544,15 +458,6 @@ export const relations = defineRelations(
       creator: r.one.user({ from: r.forms.createdByUserId, to: r.user.id }),
       workspace: r.one.workspaces({ from: r.forms.workspaceId, to: r.workspaces.id }),
       submissions: r.many.submissions({ from: r.forms.id, to: r.submissions.formId }),
-      visits: r.many.formVisits({ from: r.forms.id, to: r.formVisits.formId }),
-      analyticsDaily: r.many.formAnalyticsDaily({
-        from: r.forms.id,
-        to: r.formAnalyticsDaily.formId,
-      }),
-      dropoffDaily: r.many.formDropoffDaily({
-        from: r.forms.id,
-        to: r.formDropoffDaily.formId,
-      }),
       versions: r.many.formVersions({ from: r.forms.id, to: r.formVersions.formId }),
       currentPublishedVersion: r.one.formVersions({
         from: r.forms.lastPublishedVersionId,
@@ -577,30 +482,6 @@ export const relations = defineRelations(
     },
     submissions: {
       form: r.one.forms({ from: r.submissions.formId, to: r.forms.id }),
-    },
-    formVisits: {
-      form: r.one.forms({ from: r.formVisits.formId, to: r.forms.id }),
-      submission: r.one.submissions({
-        from: r.formVisits.submissionId,
-        to: r.submissions.id,
-      }),
-      questionProgress: r.many.formQuestionProgress({
-        from: r.formVisits.id,
-        to: r.formQuestionProgress.visitId,
-      }),
-    },
-    formQuestionProgress: {
-      form: r.one.forms({ from: r.formQuestionProgress.formId, to: r.forms.id }),
-      visit: r.one.formVisits({
-        from: r.formQuestionProgress.visitId,
-        to: r.formVisits.id,
-      }),
-    },
-    formAnalyticsDaily: {
-      form: r.one.forms({ from: r.formAnalyticsDaily.formId, to: r.forms.id }),
-    },
-    formDropoffDaily: {
-      form: r.one.forms({ from: r.formDropoffDaily.formId, to: r.forms.id }),
     },
     formFavorites: {
       user: r.one.user({ from: r.formFavorites.userId, to: r.user.id }),
@@ -630,6 +511,37 @@ export const relations = defineRelations(
 );
 
 // ============================================================================
+// Pages (Notion-style documents)
+// ============================================================================
+
+export const pages = sqliteTable(
+  "pages",
+  {
+    id: text().primaryKey(),
+    workspaceId: text().notNull(),
+    parentId: text(),
+    createdByUserId: text().notNull(),
+    kind: text().notNull().default("doc"),
+    title: text().notNull().default("Untitled"),
+    icon: text(),
+    cover: text(),
+    content: text({ mode: "json" }).notNull().default([]),
+    meta: text({ mode: "json" }),
+    deletedAt: integer({ mode: "timestamp_ms" }),
+    createdAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer({ mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (t) => [
+    index("idx_pages_workspace_id").on(t.workspaceId),
+    index("idx_pages_parent_id").on(t.parentId),
+  ],
+);
+
+// ============================================================================
 // Zod Schema Exports (Single Source of Truth)
 // ============================================================================
 
@@ -637,11 +549,6 @@ export const WorkspaceZod = createSelectSchema(workspaces);
 export const FormZod = createSelectSchema(forms);
 export const FormVersionZod = createSelectSchema(formVersions);
 export const SubmissionZod = createSelectSchema(submissions);
-export const FormVisitsZod = createSelectSchema(formVisits);
-export const FormQuestionProgressZod = createSelectSchema(formQuestionProgress);
-export const FormAnalyticsDailyZod = createSelectSchema(formAnalyticsDaily);
-export const FormDropoffDailyZod = createSelectSchema(formDropoffDaily);
-
 export const OrganizationZod = createSelectSchema(organization);
 export const MemberZod = createSelectSchema(member);
 export const InvitationZod = createSelectSchema(invitation);
@@ -649,3 +556,5 @@ export const InvitationZod = createSelectSchema(invitation);
 export const FormFavoriteZod = createSelectSchema(formFavorites);
 export const FormNotificationPreferenceZod = createSelectSchema(formNotificationPreferences);
 export const FormSubmissionNotificationZod = createSelectSchema(formSubmissionNotifications);
+
+export const PageZod = createSelectSchema(pages);

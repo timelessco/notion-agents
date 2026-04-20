@@ -30,6 +30,7 @@ import {
   TrashIcon,
 } from "@/components/ui/icons";
 import { SidebarSection } from "@/components/ui/sidebar-section";
+import { WorkspacePagesTree } from "./workspace-pages-tree";
 import { createFormLocal } from "@/collections";
 import { cn } from "@/lib/utils";
 import { useLocation, useRouter } from "@tanstack/react-router";
@@ -163,10 +164,7 @@ export const WorkspaceItemMinimal = ({
             </Collapsible>
             <DropdownMenuGroup>
               <DropdownMenuLabel>Workspace</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => handleCreate("form")}
-                disabled={isCreatingForm}
-              >
+              <DropdownMenuItem onClick={() => handleCreate("form")} disabled={isCreatingForm}>
                 {isCreatingForm ? (
                   <Loader2Icon className="size-4 animate-spin" />
                 ) : (
@@ -174,10 +172,7 @@ export const WorkspaceItemMinimal = ({
                 )}
                 <span className="flex-1 text-left">New form</span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleCreate("database")}
-                disabled={isCreatingForm}
-              >
+              <DropdownMenuItem onClick={() => handleCreate("database")} disabled={isCreatingForm}>
                 {isCreatingForm ? (
                   <Loader2Icon className="size-4 animate-spin" />
                 ) : (
@@ -212,6 +207,7 @@ export const WorkspaceItemMinimal = ({
       {workspace.forms.length === 0 && (
         <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">No forms yet</span>
       )}
+      <WorkspacePagesTree workspaceId={workspace.id} />
     </SidebarSection>
   );
 };

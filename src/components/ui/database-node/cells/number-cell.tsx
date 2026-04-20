@@ -22,7 +22,7 @@ export const NumberCell = ({
   config?: ColumnConfig;
 }) => {
   const isCurrency = config?.kind === "currency";
-  const symbol = isCurrency ? CURRENCY_SYMBOL[(config as { code: string }).code] ?? "" : "";
+  const symbol = isCurrency ? (CURRENCY_SYMBOL[(config as { code: string }).code] ?? "") : "";
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>(value == null || value === "" ? "" : String(value));

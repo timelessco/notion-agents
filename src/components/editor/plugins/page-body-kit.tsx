@@ -19,7 +19,7 @@ import { EmojiKit } from "@/components/editor/plugins/emoji-kit";
 import { ExitBreakKit } from "@/components/editor/plugins/exit-break-kit";
 import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit";
 import { FontKit } from "@/components/editor/plugins/font-kit";
-import { FormBlocksKit, TabGuardPlugin } from "@/components/editor/plugins/form-blocks-kit";
+import { FormEmbedKit } from "@/components/editor/plugins/form-embed-kit";
 import { LineHeightKit } from "@/components/editor/plugins/line-height-kit";
 import { LinkKit } from "@/components/editor/plugins/link-kit";
 import { ListKit } from "@/components/editor/plugins/list-kit";
@@ -43,7 +43,7 @@ export const PageBodyKit = [
   ...CalloutKit,
   ...ColumnKit,
   ...MathKit,
-  ...FormBlocksKit,
+  ...FormEmbedKit,
   ...DatabaseKit,
   ...DateKit,
   ...LinkKit,
@@ -55,8 +55,6 @@ export const PageBodyKit = [
   ...ListKit,
   ...AlignKit,
   ...LineHeightKit,
-
-  TabGuardPlugin,
 
   ...DiscussionKit,
   ...CommentKit,

@@ -18,8 +18,7 @@ export const CalendarLayout = ({
   rows: DatabaseRow[];
   onOpenRow: (id: string) => void;
 }) => {
-  const dateColId =
-    view.calendarDateColId ?? columns.find((c) => c.type === "date")?.id;
+  const dateColId = view.calendarDateColId ?? columns.find((c) => c.type === "date")?.id;
   const dateCol = columns.find((c) => c.id === dateColId);
 
   const { weeks, heading } = useMemo(() => {
@@ -58,9 +57,7 @@ export const CalendarLayout = ({
 
   return (
     <div className="rounded-md border border-border/40 bg-background">
-      <div className="border-b border-border/40 px-3 py-2 text-[13px] font-medium">
-        {heading}
-      </div>
+      <div className="border-b border-border/40 px-3 py-2 text-[13px] font-medium">{heading}</div>
       <div className="grid grid-cols-7 border-b border-border/40 bg-muted/20 text-[11px] font-medium text-muted-foreground">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d} className="px-2 py-1">
@@ -71,7 +68,7 @@ export const CalendarLayout = ({
       <div className="grid grid-cols-7">
         {weeks.flat().map((cell, i) => {
           const key = cell.date ? formatDayKey(cell.date) : `empty-${i}`;
-          const dayRows = cell.date ? byDay.get(key) ?? [] : [];
+          const dayRows = cell.date ? (byDay.get(key) ?? []) : [];
           return (
             <div
               key={key}

@@ -14,11 +14,7 @@ import { ColumnHeaderMenu } from "../column-header";
 import { CELL_REGISTRY, USER_SELECTABLE_TYPES } from "../registry";
 import { DatabaseRowView } from "../row-view";
 import type { GroupedRows } from "../filters";
-import type {
-  ColumnType,
-  DatabaseColumn,
-  DatabaseRow,
-} from "../types";
+import type { ColumnType, DatabaseColumn, DatabaseRow } from "../types";
 
 export const TableLayout = ({
   visibleColumns,
@@ -63,11 +59,7 @@ export const TableLayout = ({
 }) => {
   const gridTemplate = useMemo(
     () =>
-      [
-        "32px",
-        ...visibleColumns.map((c) => `${c.width ?? 160}px`),
-        "minmax(40px, 1fr)",
-      ].join(" "),
+      ["32px", ...visibleColumns.map((c) => `${c.width ?? 160}px`), "minmax(40px, 1fr)"].join(" "),
     [visibleColumns],
   );
 
@@ -152,7 +144,11 @@ export const TableLayout = ({
               </button>
             }
           />
-          <DropdownMenuContent align="end" className="max-h-[360px] w-44 overflow-y-auto p-1" sideOffset={6}>
+          <DropdownMenuContent
+            align="end"
+            className="max-h-[360px] w-44 overflow-y-auto p-1"
+            sideOffset={6}
+          >
             <div className="px-1.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
               New property
             </div>
@@ -189,9 +185,7 @@ export const TableLayout = ({
                 style={{ gridColumn: `1 / ${totalCells + 1}` }}
               >
                 {group.key.label}
-                <span className="text-muted-foreground/60">
-                  {group.rows.length}
-                </span>
+                <span className="text-muted-foreground/60">{group.rows.length}</span>
               </div>
             )}
             {group.rows.map((row) => {
@@ -201,10 +195,7 @@ export const TableLayout = ({
                   ? null
                   : MULTI_SELECT_COLORS[colorIdx % MULTI_SELECT_COLORS.length];
               return (
-                <div
-                  key={row.id}
-                  className={cn("contents", color && color.bg)}
-                >
+                <div key={row.id} className={cn("contents", color && color.bg)}>
                   <DatabaseRowView
                     row={row}
                     columns={visibleColumns}

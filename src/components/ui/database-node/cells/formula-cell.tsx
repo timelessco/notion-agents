@@ -2,10 +2,7 @@ import { useMemo } from "react";
 
 import type { ColumnConfig, DatabaseColumn, DatabaseRow } from "../types";
 
-const VAR = (name: string) =>
-  name
-    .replace(/[^a-zA-Z0-9_]/g, "_")
-    .replace(/^([0-9])/, "_$1") || "_";
+const VAR = (name: string) => name.replace(/[^a-zA-Z0-9_]/g, "_").replace(/^([0-9])/, "_$1") || "_";
 
 type Token =
   | { kind: "num"; value: number }
@@ -17,7 +14,7 @@ type Token =
 const tokenize = (src: string): Token[] => {
   const tokens: Token[] = [];
   let i = 0;
-  const multi = ["==", "!=", "<=", ">=", "&&", "||"];
+  const multi = new Set(["==", "!=", "<=", ">=", "&&", "||"]);
   while (i < src.length) {
     const c = src[i];
     if (/\s/.test(c)) {
@@ -56,7 +53,7 @@ const tokenize = (src: string): Token[] => {
       continue;
     }
     const two = src.slice(i, i + 2);
-    if (multi.includes(two)) {
+    if (multi.has(two)) {
       tokens.push({ kind: "op", value: two });
       i += 2;
       continue;
@@ -122,8 +119,7 @@ class Parser {
       this.eat();
       const then = this.parseExpr();
       const colon = this.eat();
-      if (colon.kind !== "op" || colon.value !== ":")
-        throw new Error("Expected : in ternary");
+      if (colon.kind !== "op" || colon.value !== ":") throw new Error("Expected : in ternary");
       const el = this.parseExpr();
       return { type: "ternary", cond, then, else: el };
     }

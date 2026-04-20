@@ -25,7 +25,7 @@ const polarClient = new Polar({
 });
 
 const getServerBaseURL = () => {
-  const url = e.BETTER_AUTH_URL || "http://localhost:3000";
+  const url = e.BETTER_AUTH_URL || "http://localhost:3001";
   return url.startsWith("http") ? url : `https://${url}`;
 };
 
@@ -134,7 +134,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     "https://agent-notion.tancn.dev",
     "https://*.workers.dev",
-    "http://localhost:3000",
+    "http://localhost:3001",
   ],
   plugins: [
     ...(import.meta.env.MODE === "test" ? [testUtils()] : []),
@@ -153,7 +153,7 @@ export const auth = betterAuth({
         logger(
           `[Org] sendInvitationEmail callback START - email: ${data.email}, org: ${data.organization.name}, inviter: ${data.inviter.user.name}, invitationId: ${data.id}`,
         );
-        const inviteLink = `${e.APP_URL || "http://localhost:3000"}/accept-invite?invitationId=${data.id}`;
+        const inviteLink = `${e.APP_URL || "http://localhost:3001"}/accept-invite?invitationId=${data.id}`;
         logger(`[Org] Generated invite link: ${inviteLink}`);
         void sendOrgInvitationEmail(
           data.email,
@@ -184,8 +184,7 @@ export const auth = betterAuth({
             },
           ],
           successUrl:
-            (e.APP_URL || "http://localhost:3000") +
-            "/settings/billing?checkout_id={CHECKOUT_ID}",
+            (e.APP_URL || "http://localhost:3001") + "/settings/billing?checkout_id={CHECKOUT_ID}",
           authenticatedUsersOnly: true,
         }),
         portal(),

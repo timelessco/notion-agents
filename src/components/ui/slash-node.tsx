@@ -33,9 +33,15 @@ import { KEYS } from "platejs";
 import type { TComboboxInputElement } from "platejs";
 import type { PlateEditor, PlateElementProps } from "platejs/react";
 import { PlateElement } from "platejs/react";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { useMemo } from "react";
 import type * as React from "react";
 
 import { insertBlock, insertInlineElement } from "@/components/editor/transforms";
+import { createChartEmbedNode } from "@/components/ui/chart-embed-node";
+import { createFormEmbedNode } from "@/components/ui/form-embed-node";
+import { createPage } from "@/lib/server-fn/pages";
 
 import {
   InlineCombobox,
@@ -309,6 +315,60 @@ const groups: Group[] = [
 
 export const SlashInputElement = (props: PlateElementProps<TComboboxInputElement>) => {
   const { editor, element } = props;
+  const navigate = useNavigate();
+  // Scoped to routes that expose $workspaceId; returns undefined on landing/embed views.
+  const params = useParams({ strict: false }) as { workspaceId?: string };
+  const workspaceId = params.workspaceId;
+
+  const pageItems = useMemo(
+    () =>
+      workspaceId
+        ? [
+            {
+              icon: <FileIcon />,
+              keywords: ["new", "page", "notion", "doc", "document"],
+              label: "New page",
+              value: "newpage",
+              onSelect: async (ed: PlateEditor, _value: string) => {
+                const id = crypto.randomUUID();
+                try {
+                  ed.tf.deleteFragment();
+                  await createPage({ data: { id, workspaceId } });
+                  await navigate({ to: "/pages/$pageId", params: { pageId: id } });
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : "Failed to create page";
+                  toast.error(message);
+                }
+              },
+            },
+            {
+              icon: <FileIcon />,
+              keywords: ["form", "embed", "survey"],
+              label: "Form embed",
+              value: "formEmbed",
+              onSelect: (ed: PlateEditor, _value: string) => {
+                const formId = window.prompt("Enter form ID to embed")?.trim();
+                if (!formId) return;
+                ed.tf.deleteFragment();
+                // eslint-disable-next-line typescript-eslint/no-explicit-any
+                ed.tf.insertNodes(createFormEmbedNode({ formId }) as any);
+              },
+            },
+            {
+              icon: <FileIcon />,
+              keywords: ["chart", "graph", "bar", "line", "pie", "database"],
+              label: "Chart",
+              value: "chartEmbed",
+              onSelect: (ed: PlateEditor, _value: string) => {
+                ed.tf.deleteFragment();
+                // eslint-disable-next-line typescript-eslint/no-explicit-any
+                ed.tf.insertNodes(createChartEmbedNode({}) as any);
+              },
+            },
+          ]
+        : [],
+    [workspaceId, navigate],
+  );
 
   return (
     <PlateElement {...props} as="span">
@@ -317,6 +377,25 @@ export const SlashInputElement = (props: PlateElementProps<TComboboxInputElement
 
         <InlineComboboxContent>
           <InlineComboboxEmpty>No results</InlineComboboxEmpty>
+
+          {pageItems.length > 0 && (
+            <InlineComboboxGroup>
+              <InlineComboboxGroupLabel>Pages</InlineComboboxGroupLabel>
+              {pageItems.map(({ icon, keywords, label, value, onSelect }) => (
+                <InlineComboboxItem
+                  key={value}
+                  value={value}
+                  onClick={() => onSelect(editor, value)}
+                  label={label}
+                  group="Pages"
+                  keywords={keywords}
+                >
+                  <div className="mr-2 text-muted-foreground">{icon}</div>
+                  {label ?? value}
+                </InlineComboboxItem>
+              ))}
+            </InlineComboboxGroup>
+          )}
 
           {groups.map(({ group, items }) => (
             <InlineComboboxGroup key={group}>

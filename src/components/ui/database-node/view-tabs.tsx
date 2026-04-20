@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  BarChart3Icon,
   CalendarIcon,
   GalleryThumbnailsIcon,
   KanbanIcon,
@@ -26,6 +27,7 @@ const LAYOUT_ICON: Record<DatabaseLayout, React.ComponentType<{ className?: stri
   gallery: GalleryThumbnailsIcon,
   list: LayoutListIcon,
   calendar: CalendarIcon,
+  chart: BarChart3Icon,
 };
 
 export const ViewTabs = ({

@@ -104,6 +104,14 @@ const DATE_OPS: FilterOperator[] = [
 const CHECK_OPS: FilterOperator[] = ["is-checked", "is-unchecked"];
 
 export const CELL_REGISTRY: Record<ColumnType, CellRegistryEntry> = {
+  title: {
+    Icon: CaseSensitiveIcon,
+    label: "Name",
+    coerce: (_v, _column) => undefined,
+    Cell: ({ row, onChange }) => <TextCell value={row.title ?? ""} onChange={onChange} />,
+    sortable: true,
+    filterOperators: TEXT_OPS,
+  },
   text: {
     Icon: CaseSensitiveIcon,
     label: "Text",
@@ -191,7 +199,11 @@ export const CELL_REGISTRY: Record<ColumnType, CellRegistryEntry> = {
     label: "Multi-select",
     coerce: (v) => (Array.isArray(v) ? v : []),
     Cell: ({ value, onChange, column }) => (
-      <MultiSelectCell value={value} onChange={onChange} options={column.options ?? EMPTY_OPTIONS} />
+      <MultiSelectCell
+        value={value}
+        onChange={onChange}
+        options={column.options ?? EMPTY_OPTIONS}
+      />
     ),
     filterOperators: MULTI_OPS,
   },
@@ -315,16 +327,17 @@ export const CELL_REGISTRY: Record<ColumnType, CellRegistryEntry> = {
 };
 
 export const COLUMN_TYPES = Object.keys(CELL_REGISTRY) as ColumnType[];
-export const USER_SELECTABLE_TYPES = COLUMN_TYPES;
+export const USER_SELECTABLE_TYPES = COLUMN_TYPES.filter((t) => t !== "title");
 
 /** Legacy re-export. */
 export const TYPE_META: Record<
   ColumnType,
   { label: string; Icon: ComponentType<{ className?: string }> }
 > = Object.fromEntries(
-  (Object.entries(CELL_REGISTRY) as [ColumnType, CellRegistryEntry][]).map(
-    ([t, entry]) => [t, { label: entry.label, Icon: entry.Icon }],
-  ),
+  (Object.entries(CELL_REGISTRY) as [ColumnType, CellRegistryEntry][]).map(([t, entry]) => [
+    t,
+    { label: entry.label, Icon: entry.Icon },
+  ]),
 ) as Record<ColumnType, { label: string; Icon: ComponentType<{ className?: string }> }>;
 
 export const HeartIconAlias = HeartIcon;

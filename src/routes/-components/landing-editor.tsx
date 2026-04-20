@@ -16,7 +16,6 @@ import { AboutSidebar } from "@/components/ui/about-sidebar";
 import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import { AppHeader } from "@/components/ui/app-header";
 import { Editor, EditorContainer } from "@/components/ui/editor";
-import { createFormButtonNode } from "@/components/ui/form-button-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { migrateEditorContent } from "@/lib/editor/migrate-editor-content";
@@ -35,21 +34,12 @@ import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/db/local-draft";
 
-// Initial state — form header, a label, a form input, and a submit button
 const landingValue = normalizeNodeId([
   createFormHeaderNode({ title: "" }) as unknown as TElement,
   {
-    type: "formLabel",
-    required: false,
-    placeholder: "Start designing",
+    type: "p",
     children: [{ text: "" }],
   },
-  {
-    type: "formInput",
-    placeholder: "Your form",
-    children: [{ text: "" }],
-  },
-  createFormButtonNode("submit") as unknown as TElement,
 ]);
 
 const noop = async () => {};

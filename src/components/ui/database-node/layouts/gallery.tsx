@@ -4,7 +4,11 @@ import { cn } from "@/lib/utils";
 import { CELL_REGISTRY } from "../registry";
 import type { DatabaseColumn, DatabaseRow, DatabaseView } from "../types";
 
-const pickCover = (row: DatabaseRow, columns: DatabaseColumn[], source: string | undefined): string | null => {
+const pickCover = (
+  row: DatabaseRow,
+  columns: DatabaseColumn[],
+  source: string | undefined,
+): string | null => {
   if (source === "none") return null;
   if (source === "firstFile") {
     for (const c of columns) {
@@ -87,9 +91,7 @@ export const GalleryLayout = ({
                       onMouseDown={(e) => e.stopPropagation()}
                     >
                       <Icon className="size-3 shrink-0" />
-                      <div className="min-w-0 flex-1 truncate">
-                        {renderCell(row, c)}
-                      </div>
+                      <div className="min-w-0 flex-1 truncate">{renderCell(row, c)}</div>
                     </div>
                   );
                 })}

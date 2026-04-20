@@ -23,6 +23,7 @@ import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsMembersRouteImport } from './routes/_authenticated/settings/members'
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings/api-keys'
+import { Route as AuthenticatedPagesPageIdRouteImport } from './routes/_authenticated/pages/$pageId'
 import { Route as AuthenticatedWorkspaceWorkspaceIdRouteRouteImport } from './routes/_authenticated/workspace/$workspaceId/route'
 import { Route as ApiFormsFormIdMetaRouteImport } from './routes/api/forms/$formId/meta'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/route'
@@ -104,6 +105,12 @@ const AuthenticatedSettingsApiKeysRoute =
     path: '/api-keys',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedPagesPageIdRoute =
+  AuthenticatedPagesPageIdRouteImport.update({
+    id: '/pages/$pageId',
+    path: '/pages/$pageId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedWorkspaceWorkspaceIdRouteRoute =
   AuthenticatedWorkspaceWorkspaceIdRouteRouteImport.update({
     id: '/workspace/$workspaceId',
@@ -153,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/login/email': typeof LoginEmailRoute
   '/login/': typeof LoginIndexRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
+  '/pages/$pageId': typeof AuthenticatedPagesPageIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
@@ -174,6 +182,7 @@ export interface FileRoutesByTo {
   '/login/email': typeof LoginEmailRoute
   '/login': typeof LoginIndexRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
+  '/pages/$pageId': typeof AuthenticatedPagesPageIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
@@ -197,6 +206,7 @@ export interface FileRoutesById {
   '/login/email': typeof LoginEmailRoute
   '/login/': typeof LoginIndexRoute
   '/_authenticated/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
+  '/_authenticated/pages/$pageId': typeof AuthenticatedPagesPageIdRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/_authenticated/settings/members': typeof AuthenticatedSettingsMembersRoute
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/login/email'
     | '/login/'
     | '/workspace/$workspaceId'
+    | '/pages/$pageId'
     | '/settings/api-keys'
     | '/settings/billing'
     | '/settings/members'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/login/email'
     | '/login'
     | '/workspace/$workspaceId'
+    | '/pages/$pageId'
     | '/settings/api-keys'
     | '/settings/billing'
     | '/settings/members'
@@ -263,6 +275,7 @@ export interface FileRouteTypes {
     | '/login/email'
     | '/login/'
     | '/_authenticated/workspace/$workspaceId'
+    | '/_authenticated/pages/$pageId'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/billing'
     | '/_authenticated/settings/members'
@@ -389,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/pages/$pageId': {
+      id: '/_authenticated/pages/$pageId'
+      path: '/pages/$pageId'
+      fullPath: '/pages/$pageId'
+      preLoaderRoute: typeof AuthenticatedPagesPageIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/workspace/$workspaceId': {
       id: '/_authenticated/workspace/$workspaceId'
       path: '/workspace/$workspaceId'
@@ -494,6 +514,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedWorkspaceWorkspaceIdRouteRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
+  AuthenticatedPagesPageIdRoute: typeof AuthenticatedPagesPageIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -501,6 +522,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedWorkspaceWorkspaceIdRouteRoute:
     AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren,
+  AuthenticatedPagesPageIdRoute: AuthenticatedPagesPageIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

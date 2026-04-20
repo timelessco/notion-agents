@@ -1,0 +1,82 @@
+import { TrailingBlockPlugin } from "platejs";
+
+import { AlignKit } from "@/components/editor/plugins/align-kit";
+import { AutoformatKit } from "@/components/editor/plugins/autoformat-kit";
+import { BasicBlocksKit } from "@/components/editor/plugins/basic-blocks-kit";
+import { BasicMarksKit } from "@/components/editor/plugins/basic-marks-kit";
+import { BlockMenuKit } from "@/components/editor/plugins/block-menu-kit";
+import { BlockPlaceholderKit } from "@/components/editor/plugins/block-placeholder-kit";
+import { CalloutKit } from "@/components/editor/plugins/callout-kit";
+import { ChartEmbedKit } from "@/components/editor/plugins/chart-embed-kit";
+import { CodeBlockKit } from "@/components/editor/plugins/code-block-kit";
+import { ColumnKit } from "@/components/editor/plugins/column-kit";
+import { CommentKit } from "@/components/editor/plugins/comment-kit";
+import { CursorOverlayKit } from "@/components/editor/plugins/cursor-overlay-kit";
+import { DatabaseKit } from "@/components/editor/plugins/database-kit";
+import { DateKit } from "@/components/editor/plugins/date-kit";
+import { DiscussionKit } from "@/components/editor/plugins/discussion-kit";
+import { EmojiKit } from "@/components/editor/plugins/emoji-kit";
+import { ExitBreakKit } from "@/components/editor/plugins/exit-break-kit";
+import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit";
+import { FontKit } from "@/components/editor/plugins/font-kit";
+import { FormEmbedKit } from "@/components/editor/plugins/form-embed-kit";
+import { FormHeaderKit } from "@/components/editor/plugins/form-header-kit";
+import { LineHeightKit } from "@/components/editor/plugins/line-height-kit";
+import { LinkKit } from "@/components/editor/plugins/link-kit";
+import { ListKit } from "@/components/editor/plugins/list-kit";
+import { MarkdownKit } from "@/components/editor/plugins/markdown-kit";
+import { MathKit } from "@/components/editor/plugins/math-kit";
+import { MediaKit } from "@/components/editor/plugins/media-kit";
+import { MentionKit } from "@/components/editor/plugins/mention-kit";
+import { SlashKit } from "@/components/editor/plugins/slash-kit";
+import { SuggestionKit } from "@/components/editor/plugins/suggestion-kit";
+import { TableKit } from "@/components/editor/plugins/table-kit";
+import { TocKit } from "@/components/editor/plugins/toc-kit";
+import { ToggleKit } from "@/components/editor/plugins/toggle-kit";
+
+// Page editor: document-style editing (Notion-like).
+// Deliberately omits FormBlocksKit + TabGuardPlugin — those belong to forms
+// and force-insert a Submit button via normalization. FormHeaderKit is kept
+// so pages get the Add icon / Add cover / Customize header.
+export const PageEditorKit = [
+  ...FormHeaderKit,
+  ...BasicBlocksKit,
+  ...CodeBlockKit,
+  ...TableKit,
+  ...ToggleKit,
+  ...TocKit,
+  ...MediaKit,
+  ...CalloutKit,
+  ...ColumnKit,
+  ...MathKit,
+  ...FormEmbedKit,
+  ...ChartEmbedKit,
+  ...DatabaseKit,
+  ...DateKit,
+  ...LinkKit,
+  ...MentionKit,
+
+  ...BasicMarksKit,
+  ...FontKit,
+
+  ...ListKit,
+  ...AlignKit,
+  ...LineHeightKit,
+
+  ...DiscussionKit,
+  ...CommentKit,
+  ...SuggestionKit,
+
+  ...SlashKit,
+  ...AutoformatKit,
+  ...CursorOverlayKit,
+  ...BlockMenuKit,
+  ...EmojiKit,
+  ...ExitBreakKit,
+  TrailingBlockPlugin,
+
+  ...MarkdownKit,
+
+  ...BlockPlaceholderKit,
+  ...FloatingToolbarKit,
+];

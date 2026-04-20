@@ -1,15 +1,4 @@
-import {
-  formAnalyticsDaily,
-  formDropoffDaily,
-  formFavorites,
-  formQuestionProgress,
-  forms,
-  formVersions,
-  formVisits,
-  member,
-  submissions,
-  workspaces,
-} from "@/db/schema";
+import { formFavorites, forms, formVersions, member, submissions, workspaces } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { createServerFn } from "@tanstack/react-start";
@@ -109,10 +98,6 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
 
       if (formIds.length > 0) {
         await Promise.all([
-          tx.delete(formAnalyticsDaily).where(inArray(formAnalyticsDaily.formId, formIds)),
-          tx.delete(formDropoffDaily).where(inArray(formDropoffDaily.formId, formIds)),
-          tx.delete(formQuestionProgress).where(inArray(formQuestionProgress.formId, formIds)),
-          tx.delete(formVisits).where(inArray(formVisits.formId, formIds)),
           tx.delete(formFavorites).where(inArray(formFavorites.formId, formIds)),
           tx.delete(submissions).where(inArray(submissions.formId, formIds)),
           tx.delete(formVersions).where(inArray(formVersions.formId, formIds)),

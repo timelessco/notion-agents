@@ -1,94 +1,92 @@
-# Better Form
+# Open Notion
 
-A modern form builder application that lets you create, customize, and share beautiful forms with a rich text editor experience. Built with a real-time local-first architecture for instant responsiveness.
+A self-hostable, open-source Notion clone. Create pages, nest them into a tree, write rich block-based content, and share them — no multi-step forms, no submit buttons, just documents.
+
+> This project was originally a form builder. It is being pivoted into a Notion-style page editor. Some form-centric code (submissions, analytics, page-break blocks) still exists during the transition and will be pruned as the page model lands. See [`docs/plans/`](docs/plans/) for the migration plan.
 
 ## Features
 
-- **Rich Form Editor** — Block-based editor powered by Plate.js with support for text formatting, media, tables, code blocks, math equations, callouts, and more
-- **AI Assistance** — AI-powered content generation and editing within the form builder
-- **Form Submissions** — Collect and manage responses with a built-in data grid view
-- **Drag & Drop** — Reorder form elements with intuitive drag-and-drop interactions
-- **Embeddable Forms** — Share forms via direct links or embed them in external sites
-- **Password Protection** — Restrict form access with password gates
-- **Workspaces & Organizations** — Multi-tenant workspace management with team invitations and role-based access
-- **Billing & Subscriptions** — Integrated payment handling via Polar
-- **Theme Support** — Light and dark mode with customizable styling
-- **Real-time Sync** — Local-first data layer with ElectricSQL for instant UI updates
+- **Block-based page editor** — Rich content editing powered by Plate.js: headings, lists, checklists, callouts, tables, code blocks, math, media, and more.
+- **Nested pages** — `/newpage` creates a real child page and navigates to it, just like Notion. Pages can be arbitrarily nested via `parent_id`.
+- **AI assistance** — Inline content generation and editing.
+- **Workspaces & organizations** — Multi-tenant workspaces with invites and role-based access.
+- **Auth** — Email/password, magic link, API keys, Google OAuth, 2FA via Better Auth.
+- **Billing** — Subscriptions via Polar.
+- **Theme support** — Light / dark / system.
 
-## Tech Stack
+## Tech stack
 
-| Layer        | Technology                                                                                                         |
-| ------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Framework    | [TanStack Start](https://tanstack.com/start) (Vite + React 19)                                                     |
-| Routing      | [TanStack Router](https://tanstack.com/router) (file-based, type-safe)                                             |
-| Data         | [TanStack DB](https://tanstack.com/db) + [ElectricSQL](https://electric-sql.com) (local-first sync)                |
-| Database     | PostgreSQL + [Drizzle ORM](https://orm.drizzle.team)                                                               |
-| Auth         | [Better Auth](https://www.better-auth.com) (email/password, OTP, 2FA, organizations)                               |
-| Editor       | [Plate.js](https://platejs.org) (rich text, block-based)                                                           |
-| UI           | [shadcn/ui](https://ui.shadcn.com) + [Radix UI](https://radix-ui.com) + [Tailwind CSS v4](https://tailwindcss.com) |
-| AI           | [Vercel AI SDK](https://sdk.vercel.ai)                                                                             |
-| Payments     | [Polar](https://polar.sh)                                                                                          |
-| File Uploads | [UploadThing](https://uploadthing.com)                                                                             |
-| Monitoring   | [Sentry](https://sentry.io)                                                                                        |
-| Server       | [Nitro](https://nitro.unjs.io) + [Caddy](https://caddyserver.com) (local HTTPS)                                    |
+| Layer      | Technology                                                                                          |
+| ---------- | --------------------------------------------------------------------------------------------------- |
+| Framework  | [TanStack Start](https://tanstack.com/start) (Vite + React 19)                                      |
+| Routing    | [TanStack Router](https://tanstack.com/router) (file-based, type-safe)                              |
+| Data       | [TanStack DB](https://tanstack.com/db) (local-first) + [TanStack Query](https://tanstack.com/query) |
+| Database   | [Cloudflare D1](https://developers.cloudflare.com/d1/) + [Drizzle ORM](https://orm.drizzle.team)    |
+| Storage    | [Cloudflare R2](https://developers.cloudflare.com/r2/) (file uploads)                               |
+| Runtime    | [Cloudflare Workers](https://workers.cloudflare.com/) (via `@cloudflare/vite-plugin`)               |
+| Auth       | [Better Auth](https://www.better-auth.com)                                                          |
+| Editor     | [Plate.js](https://platejs.org)                                                                     |
+| UI         | [shadcn/ui](https://ui.shadcn.com) + [Tailwind CSS v4](https://tailwindcss.com)                     |
+| AI         | [Vercel AI SDK](https://sdk.vercel.ai)                                                              |
+| Payments   | [Polar](https://polar.sh)                                                                           |
+| Monitoring | [Sentry](https://sentry.io)                                                                         |
 
 ## Prerequisites
 
 - [Bun](https://bun.sh) (runtime and package manager)
-- [PostgreSQL](https://www.postgresql.org) database
-- [Caddy](https://caddyserver.com) (for local HTTPS development)
+- A Cloudflare account (only needed for `wrangler deploy`; local dev uses miniflare via the vite plugin)
 
-## Getting Started
+## Getting started
 
-1. **Clone the repository**
+1. **Clone and install**
 
    ```bash
    git clone <repository-url>
-   cd better-form
-   ```
-
-2. **Install dependencies**
-
-   ```bash
+   cd open-notion
    bun install
    ```
 
-3. **Set up environment variables**
+2. **Environment**
 
    ```bash
    cp .env.example .env
    ```
 
-   Fill in the required values in `.env` (database URL, auth secrets, API keys, etc.).
+   Fill in `BETTER_AUTH_URL`, OAuth keys, Polar keys, etc. `BETTER_AUTH_URL` defaults to `http://localhost:3001` to avoid clashing with other dev servers on port 3000.
 
-4. **Set up the database**
-
-   ```bash
-   bun db:generate
-   bun db:migrate
-   ```
-
-5. **Start the development server**
+3. **Database (local D1 via miniflare)**
 
    ```bash
-   bun dev
+   bun run db:generate        # generate drizzle migrations from schema
+   bun run db:migrate:local   # apply to local miniflare D1
    ```
 
-   This starts both Caddy (HTTPS proxy) and the Vite dev server. Open the URL printed in the terminal.
+4. **Dev server**
+
+   ```bash
+   bun run dev
+   ```
+
+   Runs on `http://localhost:3001` (pinned via `strictPort: true`).
 
 ## Scripts
 
-| Command           | Description                             |
-| ----------------- | --------------------------------------- |
-| `bun dev`         | Start dev server with Caddy HTTPS proxy |
-| `bun build`       | Production build                        |
-| `bun start`       | Start production server                 |
-| `bun test`        | Run tests with Vitest                   |
-| `bun lint`        | Lint with oxlint + knip                 |
-| `bun fmt`         | Format with oxfmt                       |
-| `bun check`       | Run all checks (Ultracite)              |
-| `bun fix`         | Auto-fix lint and format issues         |
-| `bun db:generate` | Generate Drizzle migrations             |
-| `bun db:migrate`  | Run database migrations                 |
-| `bun db:push`     | Push schema changes directly            |
-| `bun db:studio`   | Open Drizzle Studio                     |
+| Command                     | Description                               |
+| --------------------------- | ----------------------------------------- |
+| `bun run dev`               | Vite dev server on :3001                  |
+| `bun run preview`           | `wrangler dev` (closer-to-prod runtime)   |
+| `bun run build`             | Production build                          |
+| `bun run deploy`            | Build and `wrangler deploy` to Cloudflare |
+| `bun test`                  | Vitest                                    |
+| `bun run lint`              | oxlint + knip                             |
+| `bun run fmt`               | oxfmt                                     |
+| `bun run check`             | Ultracite checks                          |
+| `bun run fix`               | Auto-fix lint + format                    |
+| `bun run db:generate`       | Generate Drizzle migrations               |
+| `bun run db:migrate:local`  | Apply migrations to local D1              |
+| `bun run db:migrate:remote` | Apply migrations to remote D1             |
+| `bun run db:studio`         | Drizzle Studio                            |
+
+## Status
+
+This is an active in-progress pivot. See [`CLAUDE.md`](CLAUDE.md) for what's done vs. what's planned, and [`CONTRIBUTING.md`](CONTRIBUTING.md) before sending a PR.

@@ -2,9 +2,7 @@
   "version": "7",
   "dialect": "sqlite",
   "id": "6f99fdf9-90e2-4d37-8270-877b38ecc866",
-  "prevIds": [
-    "00000000-0000-0000-0000-000000000000"
-  ],
+  "prevIds": ["00000000-0000-0000-0000-000000000000"],
   "ddl": [
     {
       "name": "account",
@@ -2625,13 +2623,9 @@
       "table": "workspaces"
     },
     {
-      "columns": [
-        "formId"
-      ],
+      "columns": ["formId"],
       "tableTo": "forms",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -2640,13 +2634,9 @@
       "table": "form_favorites"
     },
     {
-      "columns": [
-        "formId"
-      ],
+      "columns": ["formId"],
       "tableTo": "forms",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -2655,13 +2645,9 @@
       "table": "form_notification_preferences"
     },
     {
-      "columns": [
-        "formId"
-      ],
+      "columns": ["formId"],
       "tableTo": "forms",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "nameExplicit": false,
@@ -2670,198 +2656,154 @@
       "table": "form_submission_notifications"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "account_pk",
       "table": "account",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "apikey_pk",
       "table": "apikey",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_analytics_daily_pk",
       "table": "form_analytics_daily",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_dropoff_daily_pk",
       "table": "form_dropoff_daily",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_favorites_pk",
       "table": "form_favorites",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_notification_preferences_pk",
       "table": "form_notification_preferences",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_question_progress_pk",
       "table": "form_question_progress",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_submission_notifications_pk",
       "table": "form_submission_notifications",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_versions_pk",
       "table": "form_versions",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_visits_pk",
       "table": "form_visits",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "forms_pk",
       "table": "forms",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "invitation_pk",
       "table": "invitation",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "member_pk",
       "table": "member",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "organization_pk",
       "table": "organization",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "session_pk",
       "table": "session",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "submissions_pk",
       "table": "submissions",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "todos_pk",
       "table": "todos",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "twoFactor_pk",
       "table": "twoFactor",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "ip"
-      ],
+      "columns": ["ip"],
       "nameExplicit": false,
       "name": "upload_rate_limits_pk",
       "table": "upload_rate_limits",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "user_pk",
       "table": "user",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "verification_pk",
       "table": "verification",
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "workspaces_pk",
       "table": "workspaces",
@@ -3200,36 +3142,28 @@
       "table": "workspaces"
     },
     {
-      "columns": [
-        "slug"
-      ],
+      "columns": ["slug"],
       "nameExplicit": false,
       "name": "organization_slug_unique",
       "entityType": "uniques",
       "table": "organization"
     },
     {
-      "columns": [
-        "token"
-      ],
+      "columns": ["token"],
       "nameExplicit": false,
       "name": "session_token_unique",
       "entityType": "uniques",
       "table": "session"
     },
     {
-      "columns": [
-        "email"
-      ],
+      "columns": ["email"],
       "nameExplicit": false,
       "name": "user_email_unique",
       "entityType": "uniques",
       "table": "user"
     },
     {
-      "columns": [
-        "username"
-      ],
+      "columns": ["username"],
       "nameExplicit": false,
       "name": "user_username_unique",
       "entityType": "uniques",
